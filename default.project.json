@@ -1,0 +1,58 @@
+{
+	"name": "DroneFarm",
+	"tree": {
+		"$className": "DataModel",
+		"ReplicatedStorage": {
+			"Shared": {
+				"$path": "src/shared"
+			},
+			"Assets": {
+				"$path": "assets",
+				"$ignoreUnknownInstances": true
+			}
+		},
+		"ServerScriptService": {
+			"Server": {
+				"$path": "src/server"
+			}
+		},
+		"StarterPlayer": {
+			"StarterPlayerScripts": {
+				"Client": {
+					"$path": "src/client"
+				}
+			}
+		},
+		"Workspace": {
+			"Baseplate": {
+				"$className": "Part",
+				"$properties": {
+					"Anchored": true,
+					"Locked": true,
+					"Size": [2048, 16, 2048],
+					"Position": [0, -8, 0],
+					"Color": [0.36, 0.42, 0.33],
+					"Material": "Grass",
+					"TopSurface": "Smooth",
+					"BottomSurface": "Smooth"
+				}
+			},
+			"SpawnLocation": {
+				"$className": "SpawnLocation",
+				"$properties": {
+					"Anchored": true,
+					"Size": [12, 1, 12],
+					"Position": [0, 0.5, 0],
+					"Duration": 0,
+					"TopSurface": "Smooth",
+					"BottomSurface": "Smooth"
+				}
+			}
+		},
+		"Lighting": {
+			"$properties": {
+				"Technology": "Future"
+			}
+		}
+	}
+}

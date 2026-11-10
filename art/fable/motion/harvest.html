@@ -1,0 +1,126 @@
+<!doctype html>
+<!--
+HARVEST - harvest() on a ripe tile: nose-down scoop, quick snap back, gold bits, the tile is empty.
+Self-contained motion study. seek(t) paints frame t (seconds): the slider and the play loop both
+call it; requestAnimationFrame only advances the clock. Bird's-eye, as in Control Mode.
+
+TIMING (seconds) - copy into /anim
+  harvest     0.50   ActionTimes.harvest
+  scoopNod    18     deg nose-down, 0.18 s Quad In (with a 0.35 stud dip)
+  scoopBack   0.10   Quad Out to neutral  -> 0.28 s total
+  harvestBits 0.60   lifetime, 9 bits (stalk crops), crop colour -> white 35 %, gravity -30; emitted at the scoop's bottom
+  toolFlash   0.15   gold disc; the crop shrinks out 0.2 s Back In (existing)
+  unripe      -      no scoop at all (grey bits only); never on wild-grass regrowth
+-->
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>harvest</title>
+<style>
+  :root { color-scheme: dark; }
+  html,body { margin:0; background:#0B0F15; color:#D7E2EC; font:13px/1.4 system-ui, sans-serif; }
+  body { display:grid; grid-template-rows:1fr auto; height:100vh; }
+  canvas { width:100%; height:100%; display:block; }
+  .bar { display:flex; gap:12px; align-items:center; padding:10px 16px; border-top:1px solid #1E2530; }
+  .bar input[type=range] { flex:1; accent-color:#7FD962; }
+  button { background:#1E2530; color:#D7E2EC; border:1px solid #2E3846; border-radius:6px; padding:6px 12px; cursor:pointer; }
+  .t { font-variant-numeric:tabular-nums; min-width:5.5em; text-align:right; color:#8FA0B3; }
+</style></head>
+<body><canvas id="c"></canvas>
+<div class="bar"><button id="play">Pause</button><input id="time" type="range" min="0" max="1" step="0.001" value="0"><span class="t" id="readout">0.000 s</span></div>
+<script>
+const LOOP = 0.5;
+
+function frame(t) {
+  ground(); for (let iy=0;iy<3;iy++) for (let ix=0;ix<3;ix++) tile(ix,iy,C.dry); charger(false,0);
+  const c = cell(1,1);
+  const nod = t < 0.18 ? quadIn(t/0.18) : t < 0.28 ? 1 - quadOut((t-0.18)/0.1) : 0;
+  const pos = [c[0], HOVER + bobAt(t, 0.3) - nod * SCOOP_DIP, c[2]];
+  const m = rotX(-nod * SCOOP_NOD);
+  if (t < 0.18) wheat(c, 1, true); else if (t < 0.38) wheat(c, 1 - (t-0.18)/0.2, true);
+  if (t >= 0.17 && t < 0.32) { const k=(t-0.17)/0.15; glow([c[0],0.1,c[2]-0.3], 20+40*k, C.gold, 0.8*(1-k)); }
+  if (t >= 0.18) { const bt = t - 0.18; for (let i=0;i<9;i++) { const a = i/9*Math.PI*2 + 0.4, sp = 7 + (i%3)*1.5, vy = sp*0.9, vx = Math.cos(a)*sp*0.4, vz = Math.sin(a)*sp*0.4;
+    const y = 0.6 + vy*bt - 15*bt*bt; if (y > 0 && bt < 0.6) dot([c[0]+vx*bt, y, c[2]+vz*bt], 4*(1-bt/0.6)+1.5, i%2?C.gold:'#F4D987', 1-bt/0.6); } }
+  drone(pos, m, ROTOR_IDLE, (t*360/ROTOR_IDLE)%360*Math.PI/180, C.eye, 0.5);
+  label(`harvest.html  t=${t.toFixed(2)}  nod=${(nod*18).toFixed(0)} deg  ${t<0.18?'scoop':t<0.28?'snap back':'bits + empty tile'}`);
+}
+
+// ------------------------------------------------------------------ constants (game units)
+const PITCH = 6.4, TILE = 6, TILE_H = 0.6, HOVER = 5, BOB = 0.35, BOB_HALF = 1.6, TF = 0.85;
+const HOP = 0.4 * TF, LIFT = 0.25, TAKEOFF = 0.15, SETTLE = 0.2, CRUISE = 0.4;
+const BANK = 14 * Math.PI / 180, ROLL = 8 * Math.PI / 180, ROTOR_IDLE = 0.35, ROTOR_MOVE = 0.22, ROTOR_LIMP = 0.7, ROTOR_EASE = 0.25;
+const LAND_H = 1.6, DIP_PLANT = 0.8, PLANT_NOD = 8 * Math.PI/180, SCOOP_NOD = 18 * Math.PI/180, SCOOP_DIP = 0.35, WATER_YAW = 6 * Math.PI/180;
+const C = { hull:'#1E2530', hullMid:'#2E3846', grass:'#4E6B3A', dry:'#A98258', wet:'#5E4530', lime:'#7FD962', eye:'#8CFF5A',
+  cyan:'#3CDCFF', gold:'#FFD666', amber:'#FFB547', chrome:'#0B0F15', ceramic:'#D7E2EC', steel:'#3A424F', pad:'#2A3440', seed:'#D6B270' };
+const quadOut = x => 1 - (1 - x) * (1 - x), quadIn = x => x * x;
+const quadInOut = x => x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2;
+const sineInOut = x => -(Math.cos(Math.PI * x) - 1) / 2, sineOut = x => Math.sin(x * Math.PI / 2);
+const backOut = x => { const c = 1.70158; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
+const clamp01 = x => Math.max(0, Math.min(1, x)), lerp = (a, b, k) => a + (b - a) * k;
+function hop(u) { const path = quadInOut(u); let lift;
+  if (u < TAKEOFF) lift = quadOut(u / TAKEOFF);
+  else if (u < 1 - SETTLE) lift = 1 - (1 - CRUISE) * sineInOut((u - TAKEOFF) / (1 - TAKEOFF - SETTLE));
+  else lift = CRUISE * (1 - quadInOut((u - (1 - SETTLE)) / SETTLE));
+  const lean = u < 0.5 ? sineOut(u / 0.5) : 1 - sineOut((u - 0.5) / 0.5);
+  return { path, lift: lift * LIFT, lean }; }
+function rotorPeriod(moving, since, from, to) { const k = quadOut(clamp01(since / ROTOR_EASE)); return lerp(from, to, k); }
+function bobAt(t, scale) { const b = (t / BOB_HALF) % 2; return (sineInOut(b < 1 ? b : 2 - b) - 0.5) * 2 * BOB * (scale === undefined ? 1 : scale); }
+// ------------------------------------------------------------------ camera
+const canvas = document.getElementById('c'), ctx = canvas.getContext('2d');
+let CAM = { eye:[PITCH, 26, PITCH + 2], target:[PITCH, 0, -PITCH * 0.15], fov: 55 * Math.PI / 180 };
+let basis = null;
+const norm = v => { const l = Math.hypot(...v); return v.map(x => x / l); };
+const cross = (a, b) => [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];
+function camBasis() { const [ex,ey,ez]=CAM.eye,[tx,ty,tz]=CAM.target; const f=norm([tx-ex,ty-ey,tz-ez]); const r=norm(cross(f,[0,1,0])); basis={f,r,up:cross(r,f)}; }
+function project(p) { const d=[p[0]-CAM.eye[0],p[1]-CAM.eye[1],p[2]-CAM.eye[2]];
+  const z=d[0]*basis.f[0]+d[1]*basis.f[1]+d[2]*basis.f[2], x=d[0]*basis.r[0]+d[1]*basis.r[1]+d[2]*basis.r[2], y=d[0]*basis.up[0]+d[1]*basis.up[1]+d[2]*basis.up[2];
+  const s=(canvas.height/2)/Math.tan(CAM.fov/2); return { x: canvas.width/2 + x/z*s, y: canvas.height/2 - y/z*s, z, s: s / z }; }
+function cell(ix, iy) { return [ix * PITCH, 0, -iy * PITCH]; }
+// ------------------------------------------------------------------ drawing
+function poly(pts, fill) { ctx.beginPath(); pts.forEach((p,i)=>{const s=project(p); i?ctx.lineTo(s.x,s.y):ctx.moveTo(s.x,s.y);}); ctx.closePath(); ctx.fillStyle=fill; ctx.fill(); }
+function shade(hex, k) { const n=parseInt(hex.slice(1),16); const f=c=>Math.max(0,Math.min(255,Math.round(c*k))); return `rgb(${f(n>>16)},${f((n>>8)&255)},${f(n&255)})`; }
+const I3 = [[1,0,0],[0,1,0],[0,0,1]];
+function xf(c, m, l) { return [c[0]+m[0][0]*l[0]+m[1][0]*l[1]+m[2][0]*l[2], c[1]+m[0][1]*l[0]+m[1][1]*l[1]+m[2][1]*l[2], c[2]+m[0][2]*l[0]+m[1][2]*l[1]+m[2][2]*l[2]]; }
+function box(c, size, hex, m) { m = m || I3; const h = size.map(s=>s/2); const P=(sx,sy,sz)=>xf(c,m,[sx*h[0],sy*h[1],sz*h[2]]);
+  [[P(-1,1,-1),P(1,1,-1),P(1,1,1),P(-1,1,1),1],[P(-1,-1,1),P(1,-1,1),P(1,1,1),P(-1,1,1),0.72],[P(1,-1,-1),P(1,-1,1),P(1,1,1),P(1,1,-1),0.55],[P(-1,-1,-1),P(-1,-1,1),P(-1,1,1),P(-1,1,-1),0.5]]
+  .forEach(f=>poly(f.slice(0,4), shade(hex, f[4]))); }
+function rotY(a){const c=Math.cos(a),s=Math.sin(a);return [[c,0,-s],[0,1,0],[s,0,c]];}
+function rotX(a){const c=Math.cos(a),s=Math.sin(a);return [[1,0,0],[0,c,s],[0,-s,c]];}
+function rotZ(a){const c=Math.cos(a),s=Math.sin(a);return [[c,s,0],[-s,c,0],[0,0,1]];}
+function mul(a,b){const r=[[0,0,0],[0,0,0],[0,0,0]];for(let i=0;i<3;i++)for(let j=0;j<3;j++)for(let k=0;k<3;k++)r[i][j]+=a[i][k]*b[k][j];return r;}
+function glow(p, r, color, alpha) { const s=project(p); const g=ctx.createRadialGradient(s.x,s.y,0,s.x,s.y,r); g.addColorStop(0,color); g.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.globalAlpha=alpha; ctx.fillStyle=g; ctx.fillRect(s.x-r,s.y-r,r*2,r*2); ctx.globalAlpha=1; }
+function dot(p, r, color, alpha) { const s=project(p); ctx.globalAlpha=alpha===undefined?1:alpha; ctx.fillStyle=color; ctx.beginPath(); ctx.arc(s.x,s.y,r,0,Math.PI*2); ctx.fill(); ctx.globalAlpha=1; }
+function tile(ix, iy, soil) { const c=cell(ix,iy); box([c[0],-TILE_H/2,c[2]],[TILE,TILE_H,TILE],soil); }
+function ground() { ctx.fillStyle=C.chrome; ctx.fillRect(0,0,canvas.width,canvas.height);
+  poly([[-40,-TILE_H,-40],[60,-TILE_H,-40],[60,-TILE_H,40],[-40,-TILE_H,40]], '#3E5A32'); }
+function charger(active, pulse) { const ch=cell(0,-1);
+  box([ch[0],-0.2,ch[2]],[TILE,0.4,TILE], active?C.cyan:C.pad); if (active) glow([ch[0],0.2,ch[2]], 70, C.cyan, 0.35);
+  box([ch[0],0.05,ch[2]],[4.6,0.1,4.6],C.steel); box([ch[0],0.12,ch[2]],[0.3,0.06,2.2],C.ceramic); box([ch[0],0.12,ch[2]],[2.2,0.06,0.3],C.ceramic);
+  const ringC = active ? C.cyan : '#22343C';
+  for (const [dx,dz,w,d] of [[2.6,0,0.2,5.4],[-2.6,0,0.2,5.4],[0,2.6,5.4,0.2],[0,-2.6,5.4,0.2]]) { ctx.globalAlpha = active ? 1 - 0.6 * pulse : 1; box([ch[0]+dx,0.15,ch[2]+dz],[w,0.2,d],ringC); ctx.globalAlpha=1; }
+  box([ch[0]-2.6,1.1,ch[2]-2.6],[0.4,2.2,0.4],'#464C58'); }
+function wheat(c, scale, ready) { const stalks = ready ? 11 : 9; for (let i=0;i<stalks;i++) { const a=i/stalks*Math.PI*2, r=(0.5+(i%3)*0.45)*scale, h=(2.4+(i%3)*0.45)*scale;
+  const bx=c[0]+Math.cos(a)*r, bz=c[2]+Math.sin(a)*r; const b=project([bx,0,bz]), tp=project([bx+Math.cos(a)*0.3*scale,h,bz+Math.sin(a)*0.3*scale]);
+  ctx.strokeStyle = ready ? '#C7A84A' : '#7FA04A'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(b.x,b.y); ctx.lineTo(tp.x,tp.y); ctx.stroke();
+  ctx.fillStyle = ready ? '#E8C45C' : '#B9C46A'; ctx.beginPath(); ctx.ellipse(tp.x+Math.cos(a)*3*scale, tp.y+2, 3.5*scale, 6*scale, a, 0, Math.PI*2); ctx.fill(); } }
+// Drone: pos (hover point), m (orientation), period (rotor s/turn), spin angle, strip colour, shadow alpha
+function drone(pos, m, period, spin, strip, shadowAlpha) {
+  const sh = project([pos[0],0.02,pos[2]]); ctx.globalAlpha=shadowAlpha; ctx.fillStyle='#0E1218'; ctx.beginPath(); ctx.ellipse(sh.x,sh.y,1.75*sh.s,1.75*sh.s*0.5,0,0,Math.PI*2); ctx.fill(); ctx.globalAlpha=1;
+  for (const [sx,sz] of [[1,1],[-1,1],[1,-1],[-1,-1]]) box(xf(pos,m,[sx*1.1,0,sz*1.1]),[0.25,0.2,1.4],C.hullMid,mul(m,rotY(Math.atan2(sx,sz))));
+  box(pos,[2.4,0.8,2.4],C.hull,m);
+  box(xf(pos,m,[0,0,-1.23]),[1.1,0.5,0.08],C.ceramic,m);
+  const eye=xf(pos,m,[0,0.02,-1.28]); glow(eye,18,C.eye,0.9); box(eye,[0.7,0.16,0.06],C.eye,m);
+  const bat=xf(pos,m,[0,0.46,0.78]); glow(bat,14,strip,0.6); box(bat,[1.2,0.12,0.3],strip,m);
+  for (const [sx,sz] of [[1,1],[-1,1],[1,-1],[-1,-1]]) { const s=project(xf(pos,m,[sx*1.6,0.5,sz*1.6])); const R=0.75*s.s;
+    ctx.globalAlpha = period<0.3?0.35:0.6; ctx.fillStyle='#B4BECD'; ctx.beginPath(); ctx.ellipse(s.x,s.y,R,R*0.6,0,0,Math.PI*2); ctx.fill(); ctx.globalAlpha=1;
+    ctx.strokeStyle='#D7E2EC'; ctx.lineWidth=2; ctx.beginPath(); for (let b=0;b<2;b++){const a=spin+b*Math.PI; ctx.moveTo(s.x,s.y); ctx.lineTo(s.x+Math.cos(a)*R,s.y+Math.sin(a)*R*0.6);} ctx.stroke(); } }
+function label(text) { ctx.fillStyle='#8FA0B3'; ctx.font='12px system-ui'; ctx.fillText(text, 14, 20); }
+// ------------------------------------------------------------------ seek / play
+function seek(t) { if (canvas.width!==canvas.clientWidth||canvas.height!==canvas.clientHeight){canvas.width=canvas.clientWidth;canvas.height=canvas.clientHeight;} camBasis(); frame(t);
+  document.getElementById('readout').textContent = t.toFixed(3)+' s'; }
+const slider=document.getElementById('time'), playBtn=document.getElementById('play'); slider.max=LOOP.toFixed(3);
+let playing=true, t0=performance.now()/1000, tAtPlay=0;
+slider.addEventListener('input',()=>{playing=false;playBtn.textContent='Play';seek(parseFloat(slider.value));});
+playBtn.addEventListener('click',()=>{playing=!playing;playBtn.textContent=playing?'Pause':'Play';if(playing){t0=performance.now()/1000;tAtPlay=parseFloat(slider.value);}});
+function tick(){ if(playing){const t=(tAtPlay+performance.now()/1000-t0)%LOOP; slider.value=t.toFixed(3); seek(t);} requestAnimationFrame(tick); }
+window.addEventListener('resize',()=>seek(parseFloat(slider.value))); tick();
+
+</script></body></html>

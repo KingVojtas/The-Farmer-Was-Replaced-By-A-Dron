@@ -1,0 +1,57 @@
+return function(T, Loader)
+	local describe, it, expect = T.describe, T.it, T.expect
+	local Values = Loader.get("ReplicatedStorage.Shared.DroneScript.Values")
+
+	describe("Values", function()
+		it("tells program values apart from plain tables", function()
+			expect(Values.kind(Values.newList())).toBe("list")
+			expect(Values.kind(Values.newDict())).toBe("dict")
+			expect(Values.kind(Values.NONE)).toBe("none")
+			expect(Values.kind({})).toBe("unknown") -- a host table is never a program value
+			expect(Values.kind(3)).toBe("number")
+		end)
+
+		it("prints like Python and never runs long", function()
+			local list = Values.newList({ 1, "a", true, Values.NONE, 2.5 })
+			expect(Values.repr(list)).toBe('[1, "a", True, None, 2.5]')
+			expect(Values.display("plain text")).toBe("plain text")
+			local long = Values.newList(table.create(500, 7))
+			expect(#Values.repr(long, 50)).toBeAtMost(53)
+		end)
+
+		it("survives cyclic lists", function()
+			local list = Values.newList({ 1 })
+			table.insert(list.items, list)
+			expect(Values.repr(list)).toBe("[1, [...]]")
+			expect(Values.equals(list, list)).toBe(true)
+			local other = Values.newList({ 1 })
+			table.insert(other.items, other)
+			-- Two different cyclic lists: the depth bound makes it give up (False) instead of hanging.
+			expect(Values.equals(list, other)).toBe(false)
+		end)
+
+		it("compares dictionaries by content", function()
+			local a, b = Values.newDict(), Values.newDict()
+			Values.dictSet(a, "x", 1)
+			Values.dictSet(a, "y", 2)
+			Values.dictSet(b, "y", 2)
+			Values.dictSet(b, "x", 1)
+			expect(Values.equals(a, b)).toBe(true)
+			Values.dictSet(b, "x", 3)
+			expect(Values.equals(a, b)).toBe(false)
+		end)
+
+		it("only hashes finite numbers, text and booleans", function()
+			expect(Values.isHashable("k")).toBe(true)
+			expect(Values.isHashable(1)).toBe(true)
+			expect(Values.isHashable(0 / 0)).toBe(false)
+			expect(Values.isHashable(Values.newList())).toBe(false)
+		end)
+
+		it("counts ranges without allocating them", function()
+			expect(Values.rangeLength(Values.newRange(0, 10, 3))).toBe(4)
+			expect(Values.rangeLength(Values.newRange(10, 0, -3))).toBe(4)
+			expect(Values.rangeLength(Values.newRange(5, 5, 1))).toBe(0)
+		end)
+	end)
+end

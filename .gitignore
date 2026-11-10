@@ -1,0 +1,9 @@
+# Build output and generated tooling files
+build/
+sourcemap.json
+roblox.yml
+globalTypes.d.luau
+*.rbxl.lock
+*.rbxlx.lock
+__pycache__/
+*.pyc

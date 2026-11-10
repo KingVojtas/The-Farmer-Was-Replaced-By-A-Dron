@@ -1,0 +1,5 @@
+std = "roblox"
+
+[lints]
+# Luau type annotations and generalized iteration are fine; keep selene focused on real bugs.
+shadowing = "allow"
