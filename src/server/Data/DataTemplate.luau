@@ -2,7 +2,7 @@
 --[[
 	DataTemplate
 	============
-	The shape of one player's saved data (schema version 2) and the defaults for new players.
+	The shape of one player's saved data (schema version 3) and the defaults for new players.
 
 	Everything here must be DataStore-serializable: only strings, finite numbers, booleans,
 	arrays (no holes) and string-keyed dictionaries. No Instances, Vector3s, functions or NaN.
@@ -17,7 +17,9 @@
 	  2  Tech Tree v2 (Root/Botany/System/Logic), field size derived from research,
 	     scriptNames (for `import`), cosmetics. v1 research is refunded (Sanitize).
 	  3  the field is saved: field = { savedAt, tiles = { {x, y, crop, state, progress,
-	     watered, bareTime}, ... } } (Progression.FieldSave). v2 saves start with an empty one.
+	     watered, bareTime, exhausted?}, ... } } (Progression.FieldSave). v2 saves start with an
+	     empty one. `exhausted` (dig exhaustion) was added later as an optional 8th value: no
+	     version bump, a 7-value entry reads as 0.
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")

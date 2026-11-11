@@ -53,6 +53,52 @@
 			"$properties": {
 				"Technology": "Future"
 			}
+		},
+		"MaterialService": {
+			"SoilDry": {
+				"$className": "MaterialVariant",
+				"$properties": {
+					"BaseMaterial": "Ground",
+					"ColorMap": "rbxassetid://96408927938055",
+					"NormalMap": "rbxassetid://135620649572866",
+					"RoughnessMap": "rbxassetid://91185130991949",
+					"StudsPerTile": 8,
+					"MaterialPattern": "Organic"
+				}
+			},
+			"SoilTilled": {
+				"$className": "MaterialVariant",
+				"$properties": {
+					"BaseMaterial": "Ground",
+					"ColorMap": "rbxassetid://139059942987760",
+					"NormalMap": "rbxassetid://99996297489389",
+					"RoughnessMap": "rbxassetid://111222851939129",
+					"StudsPerTile": 6.4,
+					"MaterialPattern": "Regular"
+				}
+			},
+			"SoilWet": {
+				"$className": "MaterialVariant",
+				"$properties": {
+					"BaseMaterial": "Ground",
+					"ColorMap": "rbxassetid://120446566952641",
+					"NormalMap": "rbxassetid://122305854462384",
+					"RoughnessMap": "rbxassetid://128394061467620",
+					"StudsPerTile": 6.4,
+					"MaterialPattern": "Regular"
+				}
+			},
+			"SoilDug": {
+				"$className": "MaterialVariant",
+				"$properties": {
+					"BaseMaterial": "Ground",
+					"ColorMap": "rbxassetid://102764113147878",
+					"NormalMap": "rbxassetid://81910203093634",
+					"RoughnessMap": "rbxassetid://103767256605018",
+					"StudsPerTile": 4,
+					"MaterialPattern": "Organic"
+				}
+			}
 		}
 	}
 }

@@ -63,6 +63,7 @@ export type World = {
 	plant: (self: World, tile: TileData, cropId: string) -> (),
 	water: (self: World, tile: TileData) -> (),
 	clearTile: (self: World, tile: TileData) -> (),
+	exhaust: (self: World, tile: TileData, seconds: number) -> (), -- dig(): the soil rests (Growth.exhaust)
 
 	data: (self: World) -> EconomyData?,
 	addCropsHarvested: (self: World, count: number) -> (),

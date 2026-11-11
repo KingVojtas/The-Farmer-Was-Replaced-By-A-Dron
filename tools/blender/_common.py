@@ -1,10 +1,10 @@
 """
 Shared helpers for the Drone Farm Blender scripts (drone.py, crops.py, stations.py).
 
-Runs INSIDE Blender (bpy). 1 BU = 1 stud. Blender is +Z up; the FBX exporter maps Blender
-+Z -> Roblox +Y and Blender -Y -> Roblox -Z when exported with Forward -Z / Up Y, so every
-"height" below is Blender Z, and the game's -Z (the drone's front, the camera side) is
-Blender +Y ... see front() below. ART_BIBLE.md §5.6 / §6: no armature, no animation,
+Runs INSIDE Blender (bpy). 1 BU = 1 stud. Blender is +Z up; the FBX / glTF exporters
+(Forward -Z, Up Y) map Blender +Z -> Roblox +Y and Blender +Y -> Roblox -Z, so every "height"
+below is Blender Z and the game's -Z (the drone's FRONT, the eye) is Blender +Y; the game's
++Z is the camera side. See g() below. ART_BIBLE.md §5.6 / §6: no armature, no animation,
 triangulated, Apply Transform.
 
 Import this with:  sys.path.insert(0, os.path.dirname(__file__)); from _common import *
@@ -19,20 +19,23 @@ import bmesh
 from mathutils import Vector
 
 # ---------------------------------------------------------------- axis convention
-# Game: +X right, +Y up, -Z = the drone's front (camera side). Blender: +X right, +Z up,
-# -Y = forward. The FBX exporter (Forward -Z, Up Y) maps Blender -Y -> Roblox -Z and
-# Blender +Z -> Roblox +Y, so game (x, y, z) == Blender (x, z, y). Every builder takes GAME
-# coordinates and converts exactly once here; the export report prints origins back in game
+# Game: +X right, +Y up, -Z = the drone's front; the Control Mode camera sits on the +Z side.
+# The exporters (Forward -Z, Up Y) ROTATE Blender into Roblox space: Blender (x, y, z) ->
+# Roblox (x, z, -y). Measured (tools probe, Blender 4.5): a vertex at Blender +Y lands at
+# Roblox -Z in both the FBX and the GLB. So game (x, y, z) == Blender (x, -z, y). An earlier
+# version used Blender (x, z, y), a MIRROR: every export came out front-to-back flipped (the
+# drone's eye at its back, the sunflower facing away from the camera). Every builder takes
+# GAME coordinates and converts exactly once here; the reports print origins back in game
 # coordinates so the mapping is verifiable in Studio.
 
 
 def g(x, y, z):
-    """Game (x, y_up, z) -> Blender (x, z, y): game -Z (front) becomes Blender -Y (forward)."""
-    return Vector((x, z, y))
+    """Game (x, y_up, z) -> Blender (x, -z, y): game -Z (front) becomes Blender +Y."""
+    return Vector((x, -z, y))
 
 
 def gsize(sx, sy, sz):
-    """Game size (x, y_up, z) -> Blender size (x, z, y)."""
+    """Game size (x, y_up, z) -> Blender size (x, z, y): extents, so no sign."""
     return Vector((sx, sz, sy))
 
 
@@ -69,6 +72,7 @@ def material(name, hex_color, roughness=0.6, metallic=0.0, emissive=None, alpha=
     bsdf = mat.node_tree.nodes.get("Principled BSDF")
     r, g_, b = [int(hex_color[i : i + 2], 16) / 255 for i in (1, 3, 5)]
     bsdf.inputs["Base Color"].default_value = (r, g_, b, 1)
+    mat.diffuse_color = (r, g_, b, 1)  # viewport / Workbench colour (preview renders)
     bsdf.inputs["Roughness"].default_value = roughness
     bsdf.inputs["Metallic"].default_value = metallic
     if emissive is not None:
@@ -82,6 +86,10 @@ def material(name, hex_color, roughness=0.6, metallic=0.0, emissive=None, alpha=
 
 
 # ---------------------------------------------------------------- primitives (game coords)
+# Every transform_apply keeps location=False: a part's origin stays at its own centre, so any
+# LATER rotation (a builder yawing an arm, tilting a disc) turns it in place. With Blender's
+# default location=True the origin jumps to the world origin and a later rotation swings the
+# part around (0, 0, 0) instead (that misplaced the drone arms and every leaf / petal wedge).
 
 
 def _finish(obj, name, mat, collection):
@@ -100,7 +108,7 @@ def box(name, center, size, mat, collection, bevel=None):
     bpy.ops.mesh.primitive_cube_add(size=1, location=g(*center))
     obj = bpy.context.active_object
     obj.scale = gsize(*size)
-    bpy.ops.object.transform_apply(scale=True)
+    bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
     if bevel is not None:
         mod = obj.modifiers.new("Bevel", "BEVEL")
         mod.width, mod.segments, mod.harden_normals = bevel[0], bevel[1], True
@@ -116,7 +124,7 @@ def cylinder(name, center, radius, height, mat, collection, sides=6, axis="Y"):
         obj.rotation_euler = (math.radians(90), 0, 0)
     elif axis == "X":
         obj.rotation_euler = (0, math.radians(90), 0)
-    bpy.ops.object.transform_apply(rotation=True)
+    bpy.ops.object.transform_apply(location=False, rotation=True, scale=False)
     return _finish(obj, name, mat, collection)
 
 
@@ -124,7 +132,7 @@ def sphere(name, center, radius, mat, collection, segments=8, rings=6, scale=(1,
     bpy.ops.mesh.primitive_uv_sphere_add(segments=segments, ring_count=rings, radius=radius, location=g(*center))
     obj = bpy.context.active_object
     obj.scale = gsize(*scale)
-    bpy.ops.object.transform_apply(scale=True)
+    bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
     return _finish(obj, name, mat, collection)
 
 
@@ -133,7 +141,7 @@ def cone(name, center, radius, height, mat, collection, sides=6, flip=False):
     obj = bpy.context.active_object
     if flip:
         obj.rotation_euler = (math.radians(180), 0, 0)
-        bpy.ops.object.transform_apply(rotation=True)
+        bpy.ops.object.transform_apply(location=False, rotation=True, scale=False)
     return _finish(obj, name, mat, collection)
 
 
@@ -142,11 +150,12 @@ def wedge(name, base, tip, width, thickness, mat, collection):
     b, t = g(*base), g(*tip)
     d = (t - b)
     length = d.length
-    bpy.ops.mesh.primitive_cube_add(size=1, location=(b + t) / 2)
+    # Built at the world origin along +Y (local coordinates), tapered, aimed, THEN moved to the
+    # midpoint, so the taper and the rotation happen around the wedge itself.
+    bpy.ops.mesh.primitive_cube_add(size=1, location=(0, 0, 0))
     obj = bpy.context.active_object
     obj.scale = (width, length, thickness)
-    # taper to the tip
-    bpy.ops.object.transform_apply(scale=True)
+    bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
     bm = bmesh.new()
     bm.from_mesh(obj.data)
     for v in bm.verts:
@@ -158,7 +167,8 @@ def wedge(name, base, tip, width, thickness, mat, collection):
     # aim the +Y axis along d
     rot = Vector((0, 1, 0)).rotation_difference(d.normalized())
     obj.rotation_euler = rot.to_euler()
-    bpy.ops.object.transform_apply(rotation=True)
+    bpy.ops.object.transform_apply(location=False, rotation=True, scale=False)
+    obj.location = (b + t) / 2
     return _finish(obj, name, mat, collection)
 
 
@@ -257,5 +267,5 @@ def report(title, objects, budget):
     print(f"\n== {title}: {len(objects)} objects, {tris} tris (budget {budget}) {'OK' if tris <= budget else 'OVER BUDGET'}")
     for o in objects:
         loc = o.location
-        print(f"   {o.name:14s} origin game=({loc.x:+.2f}, {loc.z:+.2f}, {loc.y:+.2f})  props={{{', '.join(f'{k}={o[k]!r}' for k in o.keys() if not k.startswith('_'))}}}")
+        print(f"   {o.name:14s} origin game=({loc.x:+.2f}, {loc.z:+.2f}, {-loc.y:+.2f})  props={{{', '.join(f'{k}={o[k]!r}' for k in o.keys() if not k.startswith('_'))}}}")
     return tris

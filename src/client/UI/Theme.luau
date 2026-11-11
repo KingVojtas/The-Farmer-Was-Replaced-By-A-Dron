@@ -13,12 +13,15 @@
 	  Theme.*Font      typography: Builder Sans for UI, Roboto Mono for code
 	  Theme.currencyColor(id) / Theme.rgb({r, g, b})
 	  Theme.create / corner / stroke / padding / gradient / button / tween
+	  Theme.skin(object, sliceName)   9-slice art behind a panel / button (Config.UiSlices);
+	                                  a no-op until that slice is uploaded
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 
 local Currencies = require(ReplicatedStorage.Shared.Config.Currencies)
+local UiSlices = require(ReplicatedStorage.Shared.Config.UiSlices)
 
 local Theme = {}
 
@@ -175,7 +178,91 @@ function Theme.button(text: string, color: Color3, props: { [string]: any }?): T
 			base[key] = value
 		end
 	end
-	return Theme.create("TextButton", base, { Theme.corner(Theme.Radius.S) })
+	local button: TextButton = Theme.create("TextButton", base, { Theme.corner(Theme.Radius.S) })
+	Theme.skin(button, "button_primary")
+	return button
+end
+
+--[[
+	9-SLICE SKINS (ASSETS-6). Puts the slice `name` (Config.UiSlices, art/ui/<name>.png) behind
+	`object`: an ImageLabel "Skin" (ZIndex 0, under the object's own children) fills it, and the
+	object's flat background + UIStroke switch off. NO-OP until the slice is uploaded and
+	UiSlices.Enabled is on, so the code-built look is always the fallback.
+	Applied one frame later, once the builder has added its children, and skipped on objects
+	with a UIListLayout / UIGridLayout / ... (the Skin would be laid out as an item). A UIPadding
+	is compensated (the Skin still fills the whole object). Text objects: children draw ABOVE
+	the parent's own text, so the text moves to a mirrored "SkinText" label above the Skin
+	(kept in sync: Text, TextColor3, TextSize, Font).
+]]
+function Theme.skin(object: GuiObject, name: string)
+	local slice = UiSlices.get(name)
+	if slice == nil then
+		return
+	end
+	task.defer(function()
+		if object.Parent == nil or object:FindFirstChild("Skin") ~= nil then
+			return
+		end
+		if object:FindFirstChildWhichIsA("UIGridStyleLayout") ~= nil then
+			return -- the Skin would become a layout item
+		end
+		local c = slice.center
+		local skin: ImageLabel = Theme.create("ImageLabel", {
+			Name = "Skin",
+			BackgroundTransparency = 1,
+			Image = "rbxassetid://" .. tostring(slice.assetId),
+			ScaleType = Enum.ScaleType.Slice,
+			SliceCenter = Rect.new(c[1], c[2], c[3], c[4]),
+			SliceScale = slice.scale,
+			Size = UDim2.fromScale(1, 1),
+			ZIndex = 0,
+			ImageColor3 = if slice.tint then object.BackgroundColor3 else Color3.new(1, 1, 1),
+		})
+		local padding = object:FindFirstChildWhichIsA("UIPadding")
+		if padding ~= nil then
+			local left, right = padding.PaddingLeft.Offset, padding.PaddingRight.Offset
+			local top, bottom = padding.PaddingTop.Offset, padding.PaddingBottom.Offset
+			skin.Position = UDim2.fromOffset(-left, -top)
+			skin.Size = UDim2.new(1, left + right, 1, top + bottom)
+		end
+		if slice.tint then
+			object:GetPropertyChangedSignal("BackgroundColor3"):Connect(function()
+				skin.ImageColor3 = object.BackgroundColor3
+			end)
+		end
+		skin.Parent = object
+		object.BackgroundTransparency = 1
+		for _, child in object:GetChildren() do
+			if child:IsA("UIStroke") then
+				child.Enabled = false
+			end
+		end
+		if object:IsA("TextButton") or object:IsA("TextLabel") then
+			local text = object :: any
+			local label: TextLabel = Theme.create("TextLabel", {
+				Name = "SkinText",
+				BackgroundTransparency = 1,
+				Size = UDim2.fromScale(1, 1),
+				ZIndex = 2,
+				Text = text.Text,
+				Font = text.Font,
+				TextSize = text.TextSize,
+				TextColor3 = text.TextColor3,
+				TextScaled = text.TextScaled,
+				TextWrapped = text.TextWrapped,
+				RichText = text.RichText,
+				TextXAlignment = text.TextXAlignment,
+				TextYAlignment = text.TextYAlignment,
+				Parent = object,
+			})
+			for _, property in { "Text", "TextColor3", "TextSize", "Font" } do
+				object:GetPropertyChangedSignal(property):Connect(function()
+					(label :: any)[property] = text[property]
+				end)
+			end
+			text.TextTransparency = 1
+		end
+	end)
 end
 
 return Theme

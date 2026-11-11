@@ -22,6 +22,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 
 local GameConfig = require(ReplicatedStorage.Shared.Config.GameConfig)
+local RateLimiter = require(ReplicatedStorage.Shared.Net.RateLimiter)
+local RemoteSchema = require(ReplicatedStorage.Shared.Net.RemoteSchema)
 local Parser = require(ReplicatedStorage.Shared.DroneScript.Parser)
 local ScriptNames = require(ReplicatedStorage.Shared.DroneScript.ScriptNames)
 local Tech = require(ReplicatedStorage.Shared.Progression.Tech)
@@ -35,6 +37,13 @@ local NotifyController = require(script.Parent.NotifyController)
 local C = Theme.Colors
 local AUTOSAVE_DELAY = 3
 local RUN_COOLDOWN = 1.2
+local LOAD_RETRY_MIN = 6 -- seconds between GetScripts tries (the server allows one per 5 s)
+local LOAD_RETRY_MAX = 30
+-- The server's RunScript token bucket, mirrored (a little slower) so RUN is never "Rejected"
+-- by the rate limit and never counts as a violation (BUG-13). RUN_COOLDOWN stays as the
+-- double-click guard.
+local RUN_RATE = (RemoteSchema.RunScript :: any).rate :: { burst: number, perSecond: number }
+local runBucket = RateLimiter.newClientMirror(RUN_RATE, os.clock)
 
 local player = Players.LocalPlayer
 
@@ -86,6 +95,9 @@ end
 
 -- Saves `targetSlot` if its text differs from what the server has. Returns true when saved.
 local function saveSlot(targetSlot: number): boolean
+	if not loaded then
+		return false -- never overwrite a saved slot the editor hasn't loaded yet (BUG-03)
+	end
 	local text = sources[targetSlot]
 	if text == nil or text == savedSources[targetSlot] then
 		return true
@@ -111,12 +123,20 @@ local function scheduleAutosave()
 end
 
 local function onTextChanged()
-	if suppress then
+	if suppress or not loaded then
 		return
 	end
 	local editor = view.editor
 	local text = editor.Text
 	local cursor = editor.CursorPosition
+
+	-- ONE Tab path (BUG-17): the Tab key handler (onTab) inserts the 4 spaces. A "\t" the
+	-- TextBox may type for the same key press is dropped, whichever of the two comes first.
+	local withoutTab, tabCursor = Text.withoutTypedTab(lastText, text, cursor)
+	if withoutTab ~= nil and tabCursor ~= nil then
+		setText(withoutTab, tabCursor)
+		return
+	end
 
 	-- Pasted tabs -> 4 spaces.
 	if string.find(text, "\t", 1, true) ~= nil then
@@ -161,7 +181,7 @@ end
 local function onTab()
 	local editor = view.editor
 	local cursor = editor.CursorPosition
-	if cursor < 1 then
+	if cursor < 1 or not loaded then
 		return
 	end
 	local text = editor.Text
@@ -215,6 +235,11 @@ local function rename(targetSlot: number, name: string)
 end
 
 local function run()
+	if not loaded then
+		-- RunScript also SAVES the source: running before the load would overwrite the slot.
+		view.setStatus("Your scripts are still loading...", C.Muted)
+		return
+	end
 	local now = os.clock()
 	if now - lastRunAt < RUN_COOLDOWN then
 		return
@@ -232,10 +257,21 @@ local function run()
 		return
 	end
 
+	if not runBucket:Consume("run") then
+		local wait =
+			math.ceil((1 - runBucket:Peek("run")) / (RUN_RATE.perSecond * RateLimiter.ClientRefillMargin))
+		view.setStatus(string.format("Slow down a moment - RUN is ready again in %d s", wait), C.Warning)
+		return
+	end
+
 	view.setStatus("Uploading...", C.Muted)
 	local ok, response = Net.invoke("RunScript", slot, source)
 	if not ok then
-		view.setStatus("Couldn't reach the server (" .. tostring(response) .. ")", C.Danger)
+		if response == "Rejected" then
+			view.setStatus("Slow down a moment, then press RUN again.", C.Warning)
+		else
+			view.setStatus("Couldn't reach the server (" .. tostring(response) .. ")", C.Danger)
+		end
 		return
 	end
 	savedSources[slot] = source
@@ -278,7 +314,10 @@ local function loadScripts()
 	if player:GetAttribute("DataLoaded") ~= true then
 		player:GetAttributeChangedSignal("DataLoaded"):Wait()
 	end
-	for _ = 1, 3 do
+	-- Keep trying until it works: until then the editor stays read-only, and saving, RUN and
+	-- snippets are refused, so nothing can overwrite a saved slot (BUG-03).
+	local delay = LOAD_RETRY_MIN
+	while true do
 		local ok, result = Net.invoke("GetScripts")
 		if ok and type(result) == "table" and type(result.scripts) == "table" then
 			for index = 1, GameConfig.Script.Slots do
@@ -291,16 +330,19 @@ local function loadScripts()
 			end
 			loaded = true
 			showSlot(1)
+			view.editor.TextEditable = true
 			view.setStatus("Ready", C.Muted)
 			return
 		end
-		task.wait(6) -- GetScripts is rate limited to one call per 5 s
+		view.setStatus(string.format("Couldn't load your scripts - retrying in %d s", delay), C.Danger)
+		task.wait(delay) -- GetScripts is rate limited to one call per 5 s
+		delay = math.min(delay * 2, LOAD_RETRY_MAX)
 	end
-	view.setStatus("Couldn't load your scripts", C.Danger)
 end
 
 function TerminalController:Init()
 	view = TerminalView.build()
+	view.editor.TextEditable = false -- until loadScripts has the saved slots
 	view.setStatus("Loading...", C.Muted)
 	view.setSlots(names, 1)
 	refreshLineInfo()
@@ -353,6 +395,11 @@ function TerminalController:IsVisible(): boolean
 	return view.isVisible()
 end
 
+-- True while the terminal body is collapsed to its header (Control Mode shows a reticle).
+function TerminalController:IsCollapsed(): boolean
+	return view.isCollapsed()
+end
+
 -- The terminal panel (the tutorial coach docks on top of it, so it only shows in Control Mode).
 function TerminalController:GetRoot(): Frame
 	return view.root
@@ -370,6 +417,10 @@ end
 	program instead (a toast says so; the other slots keep theirs).
 ]]
 function TerminalController:InsertSnippet(snippet: string)
+	if not loaded then
+		NotifyController.show("info", "Your scripts are still loading - try again in a moment.")
+		return
+	end
 	local text = view.editor.Text
 	local cursor = view.editor.CursorPosition
 	local block = if string.sub(snippet, -1) == "\n" then snippet else snippet .. "\n"

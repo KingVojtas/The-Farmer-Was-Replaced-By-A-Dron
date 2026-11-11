@@ -49,7 +49,7 @@ ReplicatedStorage.Assets
       blades flat, origin at the hub). Optional: `Eye` (Neon, `PaintSlot = "accent"`), parts
       with the attribute `PaintSlot = primary | secondary | accent`, and a `BatteryBar` or
       `StatusLight` (Neon, no SurfaceAppearance: the game colours it by battery).
-- [ ] ≤ 16 MeshParts, ≤ 1,900 tris. Keep the top of `Body` clear in a 1.2-stud circle (hats sit
+- [ ] ≤ 14 MeshParts, ≤ 1,900 tris (`docs/ART_BIBLE.md` §7). Keep the top of `Body` clear in a 1.2-stud circle (hats sit
       0.4 above the body centre).
 - [ ] It hovers 5 studs up with a 0.35 bob and a 14° lean: nothing may clip.
 - [ ] Painted MeshParts stay opaque: a SurfaceAppearance with a fully transparent ColorMap

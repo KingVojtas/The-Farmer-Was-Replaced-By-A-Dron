@@ -91,6 +91,9 @@ function LiveWorld.new(player: Player, plot: GridService.Plot, shouldStop: (() -
 		clearTile = function(_self: World, tile: TileData)
 			GridService:ClearTile(tile :: any)
 		end,
+		exhaust = function(_self: World, tile: TileData, seconds: number)
+			GridService:ExhaustTile(tile :: any, seconds)
+		end,
 
 		data = function(_self: World): WorldTypes.EconomyData?
 			return DataService:GetData(player) :: any

@@ -72,7 +72,15 @@ local CONFIG = {
 	TerminalReserve = 0.38, -- fraction of the screen width on the left kept free for the terminal
 	UiFadeTime = 0.25, -- button / terminal fades
 	ResizeDebounce = 0.3, -- seconds to wait after the last viewport change before re-framing
+	-- Console framing (V-CONSOLE): letterbox, a narrower lens, a faint reticle.
+	Letterbox = 24, -- px bars top and bottom (below the HUD: never covers it)
+	ConsoleFov = 55, -- degrees while controlling (restored to what it was on leave)
+	ReticleSize = 32, -- px, shown only while the terminal is collapsed
+	ReticleAlpha = 0.85, -- transparency: barely there
+	OthersRefresh = 1, -- seconds between re-collecting other players' character parts
 }
+local CHROME = Color3.fromHex("#0B0F15")
+local CONSOLE_EASE = TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 
 local RENDER_STEP_NAME = "DroneFarm_ControlMode"
 local CAMERA_EASING = TweenInfo.new(CONFIG.EnterTime, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
@@ -118,6 +126,16 @@ local frozen: { parts: { { part: BasePart, collide: boolean } }, root: BasePart?
 -- You died / were killed in Control Mode: go straight back into it after the respawn.
 local resumeAfterRespawn = false
 local resizeVersion = 0
+-- V-CONSOLE: the exploring FOV (read ONCE, BUG-12) and its tween, other players' hidden parts,
+-- the console chrome.
+local exploreFov: number? = nil
+local fovTween: Tween? = nil
+local othersParts: { BasePart } = {}
+local othersRefreshAt = 0
+local consoleGui: ScreenGui
+local letterTop: Frame
+local letterBottom: Frame
+local reticle: Frame
 
 -- UI
 local gui: ScreenGui
@@ -279,6 +297,105 @@ local function buildUi()
 	Theme.stroke(C.Danger, 2, 0.2).Parent = leaveButton
 
 	gui.Parent = player:WaitForChild("PlayerGui")
+
+	-- Console chrome (V-CONSOLE) in its OWN ScreenGui BELOW the HUD (DisplayOrder -1), edge to
+	-- edge, so the letterbox never covers the HUD or the terminal.
+	consoleGui = Theme.create("ScreenGui", {
+		Name = "ControlModeConsole",
+		ResetOnSpawn = false,
+		DisplayOrder = -1,
+		IgnoreGuiInset = true,
+		ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+	})
+	letterTop = Theme.create("Frame", {
+		Name = "LetterboxTop",
+		BackgroundColor3 = CHROME,
+		BorderSizePixel = 0,
+		Size = UDim2.fromScale(1, 0),
+		Parent = consoleGui,
+	})
+	letterBottom = Theme.create("Frame", {
+		Name = "LetterboxBottom",
+		BackgroundColor3 = CHROME,
+		BorderSizePixel = 0,
+		AnchorPoint = Vector2.new(0, 1),
+		Position = UDim2.fromScale(0, 1),
+		Size = UDim2.fromScale(1, 0),
+		Parent = consoleGui,
+	})
+	-- A faint grid reticle: a square outline with a centre dot (no image, no crosshair).
+	reticle = Theme.create("Frame", {
+		Name = "Reticle",
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+		Size = UDim2.fromOffset(CONFIG.ReticleSize, CONFIG.ReticleSize),
+		BackgroundTransparency = 1,
+		Visible = false,
+		Parent = consoleGui,
+	}, {
+		Theme.create(
+			"UIStroke",
+			{ Color = Color3.new(1, 1, 1), Thickness = 1, Transparency = CONFIG.ReticleAlpha }
+		),
+		Theme.create("Frame", {
+			Name = "Dot",
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.fromScale(0.5, 0.5),
+			Size = UDim2.fromOffset(3, 3),
+			BackgroundColor3 = Color3.new(1, 1, 1),
+			BackgroundTransparency = CONFIG.ReticleAlpha,
+			BorderSizePixel = 0,
+		}),
+	})
+	consoleGui.Parent = player:WaitForChild("PlayerGui")
+end
+
+--[[
+	V-CONSOLE on / off: letterbox bars, the console lens, and (off) everything restored.
+	`instant` (death, reset, plot gone, and the end of every exit) skips the tweens.
+	FOV (BUG-12): one tracked tween, cancelled on every call. The exploring FOV is read ONCE (the
+	first entry) instead of on every entry, so re-entering while the lens is still easing back
+	can never save a mid-tween value and creep narrower. The exit tween takes ExitTime, like the
+	camera flight it rides along with.
+]]
+local function setConsole(on: boolean, instant: boolean)
+	local bar = UDim2.new(1, 0, 0, if on then CONFIG.Letterbox else 0)
+	local camera = Workspace.CurrentCamera
+	if fovTween ~= nil then
+		fovTween:Cancel()
+		fovTween = nil
+	end
+	if on and camera ~= nil and exploreFov == nil then
+		exploreFov = camera.FieldOfView
+	end
+	local fov = if on then CONFIG.ConsoleFov else exploreFov
+	if not on then
+		reticle.Visible = false
+		for _, part in othersParts do
+			if part.Parent ~= nil then
+				part.LocalTransparencyModifier = 0
+			end
+		end
+		table.clear(othersParts)
+	end
+	if instant then
+		letterTop.Size = bar
+		letterBottom.Size = bar
+		if camera ~= nil and fov ~= nil then
+			camera.FieldOfView = fov
+		end
+		return
+	end
+	TweenService:Create(letterTop, CONSOLE_EASE, { Size = bar }):Play()
+	TweenService:Create(letterBottom, CONSOLE_EASE, { Size = bar }):Play()
+	if camera ~= nil and fov ~= nil then
+		local info = if on
+			then CAMERA_EASING
+			else TweenInfo.new(CONFIG.ExitTime, CAMERA_EASING.EasingStyle, CAMERA_EASING.EasingDirection)
+		local tween = TweenService:Create(camera, info, { FieldOfView = fov })
+		fovTween = tween
+		tween:Play()
+	end
 end
 
 ------------------------------------------------------------------------- movement lock
@@ -371,7 +488,7 @@ local function birdsEyeCFrame(plot: Model): CFrame?
 	local distance, shift = PlotFraming.solve(
 		size,
 		pitch,
-		camera.FieldOfView,
+		CONFIG.ConsoleFov, -- framed for the console lens (the FOV tweens there on entry)
 		aspect,
 		CONFIG.TerminalReserve,
 		CONFIG.FrameMargin,
@@ -443,6 +560,28 @@ local function bindRenderGuard()
 			part.LocalTransparencyModifier = 1
 			part.CanCollide = false
 		end
+		-- V-CONSOLE: other players' characters are hidden too (their drones stay visible); the
+		-- part list is re-collected every OthersRefresh s, not every frame.
+		local now = os.clock()
+		if now >= othersRefreshAt then
+			othersRefreshAt = now + CONFIG.OthersRefresh
+			table.clear(othersParts)
+			for _, other in Players:GetPlayers() do
+				local character = other.Character
+				if other ~= player and character ~= nil then
+					for _, descendant in character:GetDescendants() do
+						if descendant:IsA("BasePart") then
+							table.insert(othersParts, descendant)
+						end
+					end
+				end
+			end
+		end
+		for _, part in othersParts do
+			part.LocalTransparencyModifier = 1
+		end
+		-- The reticle only while the terminal is collapsed (and the camera has arrived).
+		reticle.Visible = state == "Controlling" and TerminalController:IsCollapsed()
 	end)
 end
 
@@ -513,6 +652,9 @@ end
 -------------------------------------------------------------------------- transitions
 local function finishExit(animated: boolean)
 	unbindRenderGuard()
+	-- Always a snap: after an animated exit the lens has just finished easing back with the
+	-- camera (same ExitTime), so this only guarantees the exact exploring FOV (BUG-12).
+	setConsole(false, true)
 	thawCharacter()
 	setResetEnabled(true)
 	restoreDefaultCamera()
@@ -546,6 +688,7 @@ local function enter()
 	setResetEnabled(false)
 	-- Scriptable = the default camera scripts stop moving the camera; we own it now.
 	camera.CameraType = Enum.CameraType.Scriptable
+	setConsole(true, false) -- letterbox + console lens, with the flight
 	bindRenderGuard()
 	refreshUi(true) -- hides WATCH / CONTROL right away
 
@@ -575,6 +718,7 @@ local function exit(instant: boolean)
 	end
 
 	state = "Exiting"
+	setConsole(false, false) -- letterbox + lens ease back during the return flight
 	refreshUi(true) -- terminal + LEAVE fade out (and the editor loses focus)
 
 	-- Return to the pose the camera had on entry, re-anchored to where the head is now.

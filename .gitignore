@@ -7,3 +7,6 @@ globalTypes.d.luau
 *.rbxlx.lock
 __pycache__/
 *.pyc
+
+# Blender exports + preview renders (rebuild: art/IMPORT.md section 0)
+tools/blender/out/

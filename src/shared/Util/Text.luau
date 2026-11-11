@@ -44,4 +44,22 @@ function Text.countLines(source: string): number
 	return count
 end
 
+--[[
+	The terminal's Tab key (BUG-17). The Tab key handler inserts the 4 spaces itself. If the
+	TextBox ALSO inserts a "\t", in either order, that edit is exactly one "\t" right before
+	the caret: this returns the text and caret with it removed, so one Tab is always 4 spaces.
+	Anything else (typing, a paste that contains tabs) returns nil.
+	`cursor` is the TextBox CursorPosition after the edit (1-based, -1 = none).
+]]
+function Text.withoutTypedTab(previous: string, current: string, cursor: number): (string?, number?)
+	if #current ~= #previous + 1 or cursor < 2 or string.sub(current, cursor - 1, cursor - 1) ~= "\t" then
+		return nil, nil
+	end
+	local text = string.sub(current, 1, cursor - 2) .. string.sub(current, cursor)
+	if text ~= previous then
+		return nil, nil -- not a single tab inserted at the caret
+	end
+	return text, cursor - 1
+end
+
 return Text

@@ -57,12 +57,26 @@ return function(T, Loader)
 		end)
 
 		it("turns asset ids into rbxassetid:// strings and placeholders into ''", function()
+			-- carrot has no own upload and (until its icon is generated) no atlas cell
+			local def = IconConfig.Icons.carrot
+			local saved, savedCell = def.assetId, IconConfig.Atlas.cells.carrot
+			def.assetId = 0
+			IconConfig.Atlas.cells.carrot = nil
+			expect(IconConfig.image("carrot")).toBe("")
+			def.assetId = 1234567
+			expect(IconConfig.image("carrot")).toBe("rbxassetid://1234567")
+			def.assetId, IconConfig.Atlas.cells.carrot = saved, savedCell
+		end)
+
+		it("uses the uploaded atlas for a key that has a cell but no own upload", function()
 			local def = IconConfig.Icons.wheat
 			local saved = def.assetId
 			def.assetId = 0
-			expect(IconConfig.image("wheat")).toBe("")
-			def.assetId = 1234567
-			expect(IconConfig.image("wheat")).toBe("rbxassetid://1234567")
+			if IconConfig.Atlas.assetId > 0 and IconConfig.Atlas.cells.wheat ~= nil then
+				expect(IconConfig.image("wheat")).toBe("rbxassetid://" .. tostring(IconConfig.Atlas.assetId))
+			else
+				expect(IconConfig.image("wheat")).toBe("")
+			end
 			def.assetId = saved
 		end)
 

@@ -46,8 +46,8 @@ def build():
     corners = [(1, 1), (-1, 1), (1, -1), (-1, -1)]
     for i, (sx, sz) in enumerate(corners, start=1):
         arm = box(f"Arm{i}", (sx * 1.1, 0, sz * 1.1), (0.25, 0.2, 1.4), m_mid, col, bevel=(0.03, 1))
-        arm.rotation_euler = (0, 0, -math.atan2(sx, sz))  # yaw the long (game Z) axis toward its corner
-        bpy.ops.object.transform_apply(rotation=True)
+        arm.rotation_euler = (0, 0, math.atan2(sx, sz))  # yaw the long (game Z) axis toward its corner
+        bpy.ops.object.transform_apply(location=False, rotation=True, scale=False)
         set_prop(arm, "PaintSlot", "secondary")
         parts.append(arm)
 
@@ -98,7 +98,7 @@ def checks(parts):
     print("  Body origin at world 0:", "OK" if body.location.length < 1e-4 else f"NO {tuple(body.location)}")
     for p in parts:
         if p.name.startswith("Rotor"):
-            print(f"  {p.name} origin = hub (game x,y,z) = ({p.location.x:+.2f}, {p.location.z:+.2f}, {p.location.y:+.2f})")
+            print(f"  {p.name} origin = hub (game x,y,z) = ({p.location.x:+.2f}, {p.location.z:+.2f}, {-p.location.y:+.2f})")
     # hat clearance: nothing but Body above y = 0.4 inside r = 1.2 (the BatteryBar sits at z = 0.63..0.93, r >= 0.63: it is
     # behind the circle only if |z| - 0.15 >= 0.6, i.e. we accept the Bible's own layout).
     print("  top of Body clear in a 1.2 circle: BatteryBar spans z 0.63..0.93 (Bible layout) - OK")

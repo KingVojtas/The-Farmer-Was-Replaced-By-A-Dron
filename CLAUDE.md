@@ -1,6 +1,6 @@
 # Claude
 
-Do **one** task per turn. Never open `docs/CLAUDE_PROMPTS.md` (deprecated).
+Do **one** task per turn. Never open `docs/archive/CLAUDE_PROMPTS.md` (deprecated).
 
 ## How the user starts a task
 
@@ -16,6 +16,8 @@ They type a **slash command** (Claude Code) or `@` a file in `.claude/commands/`
 | `/fable-1` … `/fable-5` | one Fable step if they split the pack |
 | `/fix-drone` | P0: drone must hop with the terminal (`DroneMoved` + attributes) |
 | `/fix` | whole remaining pass: drone → g1–g6 → art → anim |
+| `/bugfix` | fix every bug in `docs/BUGS.md` (P0 → P3) with tests, then audit the unaudited client files |
+| `/assets` | full graphics + asset pass: icons, procedural look, Blender models, soil, UI slices, thumbnail |
 | `/bug-drone` | visibility only (hull on screen) |
 | `/g1` `/g2` `/v1` `/fg-hud` … | same |
 | a bare id like `BUG-DRONE` | Read `.claude/commands/bug-drone.md` and execute **only** that file |

@@ -5,11 +5,11 @@
 -- id below (0 = not uploaded: every icon keeps its emoji fallback). `cells` only lists keys
 -- that have art, so missing icons keep their emoji too.
 return {
-	assetId = 0,
+	assetId = 110940790391979,
 	cell = 128,
 	columns = 8,
 	width = 1024,
-	height = 640,
+	height = 1024,
 	cells = {
 		hay = 0,
 		wheat = 1,

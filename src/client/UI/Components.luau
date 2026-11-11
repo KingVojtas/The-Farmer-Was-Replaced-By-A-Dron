@@ -53,6 +53,7 @@ function Components.panel(props: { [string]: any }, children: { any }?): Frame
 	Theme.corner(Theme.Radius.M).Parent = frame
 	Theme.stroke(C.Border, 1).Parent = frame
 	Theme.gradient(Color3.new(1, 1, 1), Color3.fromRGB(200, 205, 215)).Parent = frame
+	Theme.skin(frame, "panel")
 	return frame
 end
 
@@ -71,7 +72,10 @@ function Components.ghostButton(text: string, props: { [string]: any }?): TextBu
 			base[key] = value
 		end
 	end
-	return Theme.create("TextButton", base, { Theme.corner(Theme.Radius.S), Theme.stroke(C.Border) })
+	local button: TextButton =
+		Theme.create("TextButton", base, { Theme.corner(Theme.Radius.S), Theme.stroke(C.Border) })
+	Theme.skin(button, "button_secondary")
+	return button
 end
 
 export type ProgressBar = { frame: Frame, set: (fraction: number, color: Color3?) -> () }
@@ -86,6 +90,7 @@ function Components.progressBar(props: { [string]: any }): ProgressBar
 		base[key] = value
 	end
 	local frame: Frame = Theme.create("Frame", base, { Theme.corner(3) })
+	Theme.skin(frame, "meter_track")
 	local fill: Frame = Theme.create("Frame", {
 		Size = UDim2.fromScale(0, 1),
 		BackgroundColor3 = C.Accent,
@@ -199,6 +204,7 @@ function Components.modal(parent: Instance, titleText: string, size: UDim2): Mod
 		Size = UDim2.new(1, 0, 0, 48),
 		Parent = root,
 	}, { Theme.padding(0, Theme.Space.L) })
+	Theme.skin(header, "modal_header")
 	local title = Components.label({
 		Text = titleText,
 		Font = Theme.UIFontHeavy,

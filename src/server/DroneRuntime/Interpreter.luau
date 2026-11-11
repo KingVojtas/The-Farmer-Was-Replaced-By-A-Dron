@@ -70,6 +70,11 @@ export type Limits = {
 -- Returns the compiled program of another script slot, or (nil, player-facing reason).
 export type ModuleLoader = (name: string) -> (Program?, string?)
 
+-- Steps taken since the last ctx.yield(). Pass the SAME table to a run and to every program it
+-- starts (simulate()), so nested runs share one CPU throttle instead of each getting
+-- `yieldEvery - 1` free steps per call.
+export type Budget = { steps: number }
+
 export type Context = {
 	specs: { [string]: Spec },
 	builtins: { [string]: BuiltinImpl },
@@ -83,6 +88,7 @@ export type Context = {
 	moduleName: string?, -- name of the running script (importing it from itself is a cycle)
 	maxSteps: number?,
 	limits: Limits,
+	budget: Budget?, -- shared throttle counter (nil = this run's own)
 }
 
 export type RunResult = {
@@ -138,7 +144,7 @@ function Interpreter.run(program: Program, ctx: Context): RunResult
 	local maxComputed = limits.maxComputed or S.MaxComputed
 
 	local idleSteps = 0
-	local stepsSinceYield = 0
+	local budget: Budget = ctx.budget or { steps = 0 }
 	local totalSteps = 0
 	local allocated = 0
 	local callDepth = 0
@@ -174,7 +180,7 @@ function Interpreter.run(program: Program, ctx: Context): RunResult
 
 	local function step(node: Pos)
 		idleSteps += 1
-		stepsSinceYield += 1
+		budget.steps += 1
 		totalSteps += 1
 		if ctx.maxSteps ~= nil and totalSteps > ctx.maxSteps then
 			error(LIMIT, 0)
@@ -188,8 +194,8 @@ function Interpreter.run(program: Program, ctx: Context): RunResult
 				)
 			)
 		end
-		if stepsSinceYield >= limits.yieldEvery then
-			stepsSinceYield = 0
+		if budget.steps >= limits.yieldEvery then
+			budget.steps = 0
 			ctx.yield()
 			checkCancel()
 		end

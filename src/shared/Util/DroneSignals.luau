@@ -16,6 +16,7 @@
 	      over the tile, only ripe harvests, never wild-grass regrowth, never rain watering.
 	  cellXY(value) -> x, y from a Vector2, Vector3 (x, y, 0) or any {X, Y}.
 	  cellFromAttributes(droneX, droneY, drone) -> prefers the number pair.
+	  shouldApply(appliedSerial, serial, cellDiffers) -> only a newer DroneSerial moves the drone.
 ]]
 
 local CropTransitions = require(script.Parent.CropTransitions)
@@ -66,6 +67,26 @@ function DroneSignals.cellFromAttributes(droneX: any, droneY: any, drone: any): 
 		return droneX, droneY
 	end
 	return DroneSignals.cellXY(drone)
+end
+
+--[[
+	Should a drone cell from one of the client's sources (plot attributes, the per-frame poll,
+	the DroneMoved remote, ScriptStatus) be applied? Every move carries the server's DroneSerial,
+	a counter that only grows (server-wide, so a new plot that reuses an Index always starts
+	past the old plot's serials). Only a NEWER serial moves the drone, so a remote that arrives
+	before the attributes (or the other way round) can never tween the drone back (BUG-05).
+	  appliedSerial  the serial of the cell the drone shows now (nil: nothing applied yet)
+	  serial         the serial of the incoming cell (nil: an old server without serials)
+	  cellDiffers    the incoming cell isn't the one shown (the fallback rule without serials)
+]]
+function DroneSignals.shouldApply(appliedSerial: number?, serial: any, cellDiffers: boolean): boolean
+	if appliedSerial == nil then
+		return true
+	end
+	if type(serial) ~= "number" then
+		return cellDiffers
+	end
+	return serial > appliedSerial
 end
 
 function DroneSignals.stationAt(x: number, y: number): string?

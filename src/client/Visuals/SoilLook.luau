@@ -11,6 +11,7 @@
 	  SoilTilled   Ground        6.4           Regular          a player crop on the tile
 	  SoilWet      Ground        6.4           Regular          Watered == true (authored over
 	                                                            the Tilled height: furrows stay)
+	  SoilDug      Ground        4             Organic          Exhausted == true (dug up, resting)
 	  SoilFertile  Ground        6.4           Regular          reserved; never shown yet
 
 	1. ARTIST VARIANT PRESENT (a MaterialVariant with that name this module didn't create):
@@ -45,6 +46,7 @@ local PLACEHOLDER_ATTRIBUTE = "SoilLookPlaceholder"
 local WHITE = Color3.new(1, 1, 1)
 local FADE = TweenInfo.new(0.4)
 local FLASH_FADE = TweenInfo.new(0.45, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+local DUG_COLOR = Color3.fromHex("#6B4A30") -- ART_BIBLE §1.4 Soil Dry dark (clods)
 
 local function rgb(c: { number }): Color3
 	return Color3.fromRGB(c[1], c[2], c[3])
@@ -70,6 +72,13 @@ local FALLBACK: { [SoilState]: { material: Enum.Material, color: Color3, studs: 
 			color = rgb(CropConfig.WetSoilColor),
 			studs = 6.4,
 			regular = true,
+		},
+		-- Dug up and resting (dig exhaustion): churned clods, Bible "Soil Dry dark" #6B4A30.
+		SoilDug = {
+			material = Enum.Material.Ground,
+			color = DUG_COLOR,
+			studs = 4,
+			regular = false,
 		},
 	}
 

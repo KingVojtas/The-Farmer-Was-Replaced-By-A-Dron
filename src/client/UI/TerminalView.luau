@@ -63,6 +63,7 @@ export type TerminalView = {
 	-- Fade the whole terminal in/out (Control Mode only; hidden while exploring).
 	setVisible: (visible: boolean, fadeTime: number?) -> (),
 	isVisible: () -> boolean,
+	isCollapsed: () -> boolean, -- the body is folded away (V-CONSOLE reticle)
 	onSlotSelected: ((slot: number) -> ())?,
 	onRename: ((slot: number, name: string) -> ())?,
 }
@@ -548,6 +549,10 @@ function TerminalView.build(): TerminalView
 				end
 				Fade.hide(gui, fadeTime)
 			end
+		end,
+
+		isCollapsed = function(): boolean
+			return collapsed
 		end,
 
 		isVisible = function(): boolean

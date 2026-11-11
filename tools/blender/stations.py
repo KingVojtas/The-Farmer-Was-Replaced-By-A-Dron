@@ -39,12 +39,12 @@ def build_charger(col):
     pad = join([base, pad, markA, markB], "Pad", col)
     set_origin(pad, (0, 0, 0))
     parts.append(pad)
-    # Copper coils: two concentric rings (torus-ish via 16-sided cylinder shells kept thin).
+    # Copper coils: two concentric rings lying FLAT around the landing pad (a torus is created
+    # flat in Blender's XY plane = the game's ground plane). Rotating it 90 degrees stood the
+    # rings up as an arch across the pad, right where the drone lands.
     for i, r in enumerate((1.9, 2.25), start=1):
         bpy.ops.mesh.primitive_torus_add(major_radius=r, minor_radius=0.07, major_segments=24, minor_segments=5, location=g(0, 0.2, 0))
         coil = bpy.context.active_object
-        coil.rotation_euler = (math.radians(90), 0, 0)
-        bpy.ops.object.transform_apply(rotation=True)
         coil.name = f"Coil{i}"
         coil.data.name = f"SM_Coil{i}"
         coil.data.materials.append(m_copper)
@@ -126,7 +126,8 @@ if __name__ == "__main__":
         for p in parts:
             shade_flat(p)
         report(name, parts, budget)
-        zs = [max((v.co.z for v in p.data.vertices), default=0) for p in parts]
+        # World heights (parts keep their own centre as origin, so local z isn't height).
+        zs = [max(((p.matrix_world @ v.co).z for v in p.data.vertices), default=0) for p in parts]
         print(f"   max height above pivot: {max(zs):.2f} studs ({'<= 2.5 pad / 3.5 pylon' if name == 'charger' else '<= 6'})")
         export(parts, os.path.join(out, name))
     print("\nStudio import: ART_BIBLE §5.6 -> ReplicatedStorage.Assets.Stations.charger / factory. Set WorldPivot = top-face centre.")

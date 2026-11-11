@@ -109,7 +109,6 @@ GameConfig.Grass = {
 	NewTilesGrown = true,
 }
 
--- dig() (Bones & Fossils research): on bare soil or wild grass, a chance to find a fossil.
 -- Collision groups (Server.Services.PlotGuardService registers them; GridService assigns).
 GameConfig.Collision = {
 	Players = "Players", -- every character part
@@ -124,6 +123,8 @@ GameConfig.PlotGuard = {
 	SpawnShieldSeconds = 2, -- ForceField on every spawn on your walkway
 }
 
+-- dig() (Bones & Fossils research): on BARE soil only (harvest what grows there first), a
+-- chance to find a fossil.
 GameConfig.Dig = {
 	-- Low odds, fossils stay a jackpot (25 Biomass points). With the exhaustion below a
 	-- `while True: dig()` sweep earns well under a wheat pipeline.
@@ -199,6 +200,7 @@ GameConfig.Script = {
 	HeapScanEvery = 1000, -- items created between two scans
 
 	MaxOutputPerSecond = 20, -- print()/hint messages sent to the client
+	MaxLineStatusPerSecond = 20, -- ScriptStatus "line" (running-line highlight) updates per player
 	MaxOutputLength = 200, -- characters per output message
 }
 
@@ -206,6 +208,9 @@ GameConfig.Script = {
 GameConfig.Simulate = {
 	MaxSeconds = 600, -- largest simulated duration
 	MaxSteps = 100000, -- step budget for one simulate() call (still CPU-throttled)
+	-- Real seconds every simulate() call takes on the live farm at least (it runs on a virtual
+	-- clock, so without this a loop of simulate() calls would cost no time at all).
+	MinRealSeconds = 1,
 }
 
 GameConfig.Data = {

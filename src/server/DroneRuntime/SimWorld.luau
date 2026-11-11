@@ -168,13 +168,16 @@ function SimWorld.new(config: Config): SimWorld
 		end,
 
 		plant = function(_self: World, tile: TileData, cropId: string)
-			Growth.plant(tile, cropId, config.weather)
+			Growth.plant(tile, cropId)
 		end,
 		water = function(_self: World, tile: TileData)
 			tile.watered = true
 		end,
 		clearTile = function(_self: World, tile: TileData)
 			Growth.clear(tile)
+		end,
+		exhaust = function(_self: World, tile: TileData, seconds: number)
+			Growth.exhaust(tile, seconds)
 		end,
 
 		data = function(_self: World): WorldTypes.EconomyData?

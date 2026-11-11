@@ -19,10 +19,11 @@
 	PUBLISHED ATTRIBUTES
 	  Plot model : OwnerUserId, Index, Size, Pitch, Origin (Vector3, top-center of tile 0,0),
 	               DroneX / DroneY (numbers), Drone (Vector3 x, y, 0), DroneSerial,
-	               DroneMoveTime, plus Remote DroneMoved (index, x, y, duration).
+	               DroneMoveTime, plus Remote DroneMoved (index, x, y, duration, serial).
 	               Battery, BatteryMax, Water, WaterMax, Cargo, CargoMax, DronePaint, DroneHat
 	  Tile part  : X, Y, State ("empty"|"planted"|"growing"|"ready"), Crop, Watered,
-	               Progress (0..1, 10 % steps)
+	               Progress (0..1, 10 % steps), Exhausted (dug up recently: nothing grows and
+	               dig() / plant() are refused until it turns false again)
 	  Station    : Kind ("charger"|"factory"), X, Y
 
 	ZONE
@@ -34,8 +35,8 @@
 
 	GROWTH (Progression.Growth, shared with simulate())
 	  Bare soil regrows wild grass after Grass.RegrowDelay seconds; crops grow by weather,
-	  water and boosts. Tile states live for the session only; currencies, cargo and research
-	  are saved.
+	  water and boosts. The tiles are saved too (PlayerData.field, Progression.FieldSave): a
+	  snapshot before every save (Progression.FieldKeeper), restored when the plot is built.
 ]]
 
 local Debris = game:GetService("Debris")
@@ -53,6 +54,7 @@ local Progression = script.Parent.Parent.Progression
 local Economy = require(Progression.Economy)
 local Field = require(Progression.Field)
 local Growth = require(Progression.Growth)
+local FieldKeeper = require(Progression.FieldKeeper)
 local FieldSave = require(Progression.FieldSave)
 local DataService = require(script.Parent.DataService)
 local WeatherService = require(script.Parent.WeatherService)
@@ -103,6 +105,14 @@ local GridService = {}
 local plotsByPlayer: { [Player]: Plot } = {}
 local plotsByIndex: { [number]: Plot } = {}
 local plotsFolder: Folder
+-- DroneSerial for EVERY plot comes from this one server-wide counter: it only grows, so a
+-- new plot that reuses an old Index never publishes a serial a client has already seen for
+-- that Index (clients only apply newer serials: Shared.Util.DroneSignals.shouldApply).
+local droneSerial = 0
+-- Live field -> saved data, fresh whichever PlayerRemoving handler runs first (BUG-02).
+local fieldKeeper = FieldKeeper.new(function(player: any): any
+	return DataService:GetData(player)
+end, os.time)
 
 local function rgb(c: { number }): Color3
 	return Color3.fromRGB(c[1], c[2], c[3])
@@ -165,6 +175,7 @@ local function publishTile(tile: Tile)
 	part:SetAttribute("State", tile.state)
 	part:SetAttribute("Crop", tile.crop or "")
 	part:SetAttribute("Watered", tile.watered)
+	part:SetAttribute("Exhausted", Growth.isExhausted(tile))
 	local shown = math.floor(tile.progress * 10) / 10
 	tile.shownProgress = shown
 	part:SetAttribute("Progress", shown)
@@ -420,7 +431,7 @@ local function buildPlot(index: number, player: Player, size: number): Plot
 	model:SetAttribute("Pitch", PITCH)
 	model:SetAttribute("Origin", origin)
 	model:SetAttribute("DroneMoveTime", GameConfig.Drone.ActionTimes.move)
-	model:SetAttribute("DroneSerial", 0)
+	model:SetAttribute("DroneSerial", droneSerial) -- past every serial an older plot published
 	GridService:PublishDrone(plot)
 	model.Parent = plotsFolder
 	return plot
@@ -488,6 +499,9 @@ local function createPlot(player: Player)
 	local plot = buildPlot(index, player, GridService:GetStats(player).gridSize)
 	plotsByIndex[index] = plot
 	plotsByPlayer[player] = plot
+	fieldKeeper:attach(player, function(): { Growth.TileData }
+		return plot.tiles :: any -- read at save time: Grid Expansion swaps the table
+	end)
 	GridService:PublishCosmetics(player)
 	WeatherService:AttachPlot(player, plot.model)
 	-- The saved field comes back (no tick replay; long absences snap crops to grown).
@@ -501,6 +515,13 @@ local function createPlot(player: Player)
 		end
 		for _, ripe in Growth.settleSquares(plot.size, tileAt) do
 			publishTile(ripe :: any)
+		end
+		-- The drone starts parked on the charger: a hold saved last session is banked now, as if
+		-- it had just landed there (BUG-10; non-yielding, saved with the next save).
+		local _, banked = Economy.unloadCargo(data)
+		if banked > 0 then
+			DataService:Replicate(player)
+			GridService:PublishDrone(plot)
 		end
 	end
 	player:GetAttributeChangedSignal("Pass_VIP"):Connect(function()
@@ -518,6 +539,9 @@ local function removePlot(player: Player)
 	if plot == nil then
 		return
 	end
+	-- Final field snapshot BEFORE anything is torn down (a no-op if DataService already
+	-- released the profile: its before-save hook snapshotted the live plot then).
+	fieldKeeper:detach(player)
 	plot.destroyed = true -- running programs see this and stop
 	WeatherService:DetachPlot(player)
 	plotsByPlayer[player] = nil
@@ -532,7 +556,7 @@ local function growthTick(dt: number)
 		local env: Growth.Env = { weather = weather, growthBoost = growthBoost }
 		for _, tile in plot.tiles do
 			local change = Growth.advance(tile, dt, env)
-			if change.state or change.watered then
+			if change.state or change.watered or change.exhausted then
 				publishTile(tile)
 			elseif change.progress then
 				publishProgress(tile)
@@ -561,10 +585,7 @@ function GridService:Init()
 
 	-- Every save carries the current field.
 	DataService:OnBeforeSave(function(player: Player, data: any)
-		local plot = plotsByPlayer[player]
-		if plot ~= nil and not plot.destroyed then
-			data.field = FieldSave.snapshot(plot.tiles :: any, os.time())
-		end
+		fieldKeeper:beforeSave(player, data)
 	end)
 
 	-- Connected in Init so no ProfileLoaded can be missed.
@@ -679,15 +700,16 @@ function GridService:MoveDrone(plot: Plot, dx: number, dy: number, duration: num
 	plot.drone.y += dy
 	plot.model:SetAttribute("DroneMoveTime", duration) -- set BEFORE Drone so the client tween uses it
 	GridService:PublishDrone(plot)
-	local serial = (plot.model:GetAttribute("DroneSerial") :: number?) or 0
-	plot.model:SetAttribute("DroneSerial", serial + 1)
+	droneSerial += 1
+	plot.model:SetAttribute("DroneSerial", droneSerial)
 	-- Remotes replicate even when Vector attributes stay silent. Fire after attributes so a
-	-- client that re-reads the plot on this event sees the new cell.
-	NetService:FireAll("DroneMoved", plot.index, plot.drone.x, plot.drone.y, duration)
+	-- client that re-reads the plot on this event sees the new cell. The serial orders the
+	-- remote against the attributes on the client (whichever arrives first wins once).
+	NetService:FireAll("DroneMoved", plot.index, plot.drone.x, plot.drone.y, duration, droneSerial)
 end
 
 function GridService:PlantTile(tile: Tile, cropId: string)
-	Growth.plant(tile, cropId, WeatherService:GetCurrent())
+	Growth.plant(tile, cropId)
 	publishTile(tile)
 end
 
@@ -698,6 +720,12 @@ end
 
 function GridService:ClearTile(tile: Tile)
 	Growth.clear(tile)
+	publishTile(tile)
+end
+
+-- dig(): the soil rests for `seconds` (Growth.exhaust), published as Exhausted = true (BUG-11).
+function GridService:ExhaustTile(tile: Tile, seconds: number)
+	Growth.exhaust(tile, seconds)
 	publishTile(tile)
 end
 

@@ -96,7 +96,9 @@ local Schema: { [string]: RemoteDef } = {
 	-- Server -> client
 	ScriptOutput = { kind = "Event", direction = "ServerToClient" }, -- (kind, text)
 	ScriptStatus = { kind = "Event", direction = "ServerToClient" }, -- (status, line)
-	-- Plot index, cell x, cell y, move duration. Attributes alone parked the drone.
+	-- Plot index, cell x, cell y, move duration, DroneSerial (server-wide, only grows: the client
+	-- applies a cell only when its serial is newer, so remote and attributes never fight).
+	-- Attributes alone parked the drone.
 	DroneMoved = { kind = "Event", direction = "ServerToClient" },
 	PurchaseGranted = { kind = "Event", direction = "ServerToClient" }, -- (productKey)
 	Notify = { kind = "Event", direction = "ServerToClient" }, -- (kind, text) toast

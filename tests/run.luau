@@ -32,6 +32,11 @@ local specs = {
 	require("./spec/RunGate.spec"),
 	require("./spec/Tutorial.spec"),
 	require("./spec/FieldSave.spec"),
+	require("./spec/Simulation.spec"),
+	require("./spec/FieldKeeper.spec"),
+	require("./spec/DroneStations.spec"),
+	require("./spec/Text.spec"),
+	require("./spec/UiSlices.spec"),
 }
 
 for _, register in specs do

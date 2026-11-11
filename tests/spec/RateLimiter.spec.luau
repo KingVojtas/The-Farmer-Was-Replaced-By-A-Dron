@@ -64,5 +64,50 @@ return function(T, Loader)
 			now = 10
 			expect(counter:Add("p")).toBe(1)
 		end)
+
+		-- BUG-13: the RUN button mirrors the server's RunScript bucket.
+		it("never lets the client send a RUN the server's bucket would reject", function()
+			local RemoteSchema = Loader.get("ReplicatedStorage.Shared.Net.RemoteSchema")
+			local rate = RemoteSchema.RunScript.rate
+			for _, gap in { 0.3, 0.7, 1.2, 1.9, 2.5 } do -- seconds between RUN presses
+				local clientNow, serverNow = 0, 0
+				local client = RateLimiter.newClientMirror(rate, function()
+					return clientNow
+				end)
+				local server = RateLimiter.newTokenBucket(rate.burst, rate.perSecond, function()
+					return serverNow
+				end)
+				local sent, rejected = 0, 0
+				for press = 0, 200 do
+					clientNow = press * gap
+					serverNow = clientNow + 0.25 -- network latency
+					if client:Consume("run") then
+						sent += 1
+						if not server:Consume("player") then
+							rejected += 1
+						end
+					end
+				end
+				expect(rejected).toBe(0)
+				expect(sent).toBeAtLeast(rate.burst) -- and it isn't simply blocking everything
+			end
+		end)
+
+		it("shows why: the old 1.2 s RUN cooldown alone ran into the server's limit", function()
+			local RemoteSchema = Loader.get("ReplicatedStorage.Shared.Net.RemoteSchema")
+			local rate = RemoteSchema.RunScript.rate
+			local now = 0
+			local server = RateLimiter.newTokenBucket(rate.burst, rate.perSecond, function()
+				return now
+			end)
+			local rejected = 0
+			for press = 0, 20 do
+				now = press * 1.2
+				if not server:Consume("player") then
+					rejected += 1
+				end
+			end
+			expect(rejected).toBeAtLeast(1)
+		end)
 	end)
 end

@@ -105,11 +105,6 @@ function WeatherService:GetFor(player: Player): Weather
 	return describe(if state ~= nil then state.name else WEATHER.Initial)
 end
 
--- The hub's weather (always the Initial type). Only for callers that have no plot in mind.
-function WeatherService:GetCurrent(): Weather
-	return describe(WEATHER.Initial)
-end
-
 function WeatherService:Init()
 	assert(TYPES[WEATHER.Initial] ~= nil, "GameConfig.Weather.Initial must be a weather type")
 	Workspace:SetAttribute("Weather", WEATHER.Initial)

@@ -17,8 +17,12 @@
 	         * actions    = world:wait(duration) -> task.wait inside DroneAPI
 	         * loadModule = `import utils` compiles the SAVED source of the slot named "utils"
 	                        (never text from the client) with the same research gate
-	         * simulate   = runs a saved slot on a SimWorld (virtual farm, virtual clock)
-	    -> ScriptStatus / ScriptOutput remotes report progress, prints, hints and errors.
+	         * simulate   = runs a saved slot on a SimWorld (virtual farm, virtual clock), via
+	                        DroneRuntime.Simulation. Each call takes >= Simulate.MinRealSeconds
+	                        of real time, slots compile once per run (compile cache) and the
+	                        simulated steps share the run's CPU budget (Interpreter.Budget)
+	    -> ScriptStatus / ScriptOutput remotes report progress, prints, hints and errors
+	       ("line" statuses are capped at Script.MaxLineStatusPerSecond).
 
 	At most one run per player, ever: two programs never drive one drone or touch one PlayerData.
 	Leaving, pressing Stop or starting a new run kills the old one (DroneRuntime.RunGate).
@@ -41,6 +45,7 @@ local Interpreter = require(Runtime.Interpreter)
 local LiveWorld = require(Runtime.LiveWorld)
 local RunGate = require(Runtime.RunGate)
 local SimWorld = require(Runtime.SimWorld)
+local Simulation = require(Runtime.Simulation)
 local DataService = require(script.Parent.DataService)
 local GamepassService = require(script.Parent.GamepassService)
 local GridService = require(script.Parent.GridService)
@@ -50,16 +55,12 @@ local WeatherService = require(script.Parent.WeatherService)
 
 local SCRIPT = GameConfig.Script
 local HINT_REPEAT_SECONDS = 10 -- the same hint is shown at most once per this many seconds
-local SILENT: DroneAPI.Output = {
-	print = function(_text: string) end,
-	hint = function(_text: string) end,
-	info = function(_text: string) end,
-}
 
 local ScriptService = {}
 
 local gate = RunGate.new()
 local outputCounter = RateLimiter.newWindowCounter(1, os.clock)
+local lineCounter = RateLimiter.newWindowCounter(1, os.clock) -- ScriptStatus "line" per player
 local lastHints: { [Player]: { [string]: number } } = {}
 
 local function sendOutput(player: Player, kind: string, text: string)
@@ -142,8 +143,8 @@ local function slotByName(player: Player, name: string): (number?, string?)
 		string.format("there's no script called '%s'. Your scripts are: %s.", name, table.concat(names, ", "))
 end
 
--- `import name`: compile the SAVED source of the slot with that name.
-local function moduleLoader(player: Player): Interpreter.ModuleLoader
+-- `import name`: compile the SAVED source of the slot with that name (once per run: `cache`).
+local function moduleLoader(player: Player, cache: Simulation.CompileCache): Interpreter.ModuleLoader
 	return function(name: string): (Parser.Program?, string?)
 		local slot, reason = slotByName(player, name)
 		if slot == nil then
@@ -154,7 +155,7 @@ local function moduleLoader(player: Player): Interpreter.ModuleLoader
 		if source == nil then
 			return nil, "your save data isn't loaded."
 		end
-		local program, err = compileFor(player, source)
+		local program, err = cache:get(slot, source)
 		if program == nil then
 			local e = err :: Parser.CompileError
 			return nil, string.format("line %d: %s", e.line, e.message)
@@ -163,107 +164,81 @@ local function moduleLoader(player: Player): Interpreter.ModuleLoader
 	end
 end
 
-local function formatError(err: { line: number, message: string, module: string? }): string
-	if err.module ~= nil then
-		return string.format("In '%s', line %d: %s", err.module, err.line, err.message)
-	end
-	return string.format("Line %d: %s", err.line, err.message)
-end
-
 -- simulate(): SimWorld calls this every virtual second. It always yields (task.wait), so even
 -- a 600 s simulation can never hitch a server frame or outlive a Stop / new run.
 local function simYield()
 	task.wait()
 end
 
--- simulate(slot, seconds) for one run (see DroneRuntime.SimWorld).
-local function simulator(player: Player, plot: GridService.Plot, outerStop: () -> boolean): DroneAPI.Simulator
-	return function(slotName: string, seconds: number): (number?, string?)
-		local slot, reason = slotByName(player, slotName)
-		if slot == nil then
-			return nil, "simulate(): " .. tostring(reason)
-		end
-		local scripts = DataService:GetScripts(player)
-		local data = DataService:GetData(player)
-		if scripts == nil or data == nil then
-			return nil, "simulate(): your save data isn't loaded."
-		end
-		local program, compileError = compileFor(player, scripts[slot])
-		if program == nil then
-			local e = compileError :: Parser.CompileError
-			return nil, string.format("simulate(): '%s' line %d: %s", slotName, e.line, e.message)
-		end
-
-		local stats = GridService:GetStats(player)
-		local growthBoost, yieldBoost = DataService:GetBoostMultipliers(player)
-		local perks = GamepassService:GetPerks(player)
-		local rng = Random.new()
-		local charger = GameConfig.Stations.charger
-		local sim = SimWorld.new({
-			size = plot.size,
-			tiles = plot.tiles :: any,
-			drone = {
-				x = charger.x,
-				y = charger.y,
-				battery = stats.batteryCapacity,
-				water = stats.waterCapacity,
-			},
-			stats = stats,
-			speedPerk = perks.speedMultiplier,
-			yieldMultiplier = perks.yieldMultiplier * yieldBoost,
-			growthBoost = growthBoost,
-			weather = WeatherService:GetFor(player),
-			currencies = data.currencies,
-			random = function(): number
-				return rng:NextNumber()
-			end,
-			duration = seconds,
-			yield = simYield,
-			shouldStop = outerStop,
-		})
-		local function simStop(): boolean
-			return sim:finished() or outerStop()
-		end
-		local isUnlocked = unlockCheck(player)
-		local api, info = DroneAPI.create({
-			world = sim,
-			output = SILENT,
-			shouldStop = simStop,
-			isUnlocked = isUnlocked,
-			simulate = nil, -- no simulations inside simulations
-		})
-		local result = Interpreter.run(program, {
-			specs = Builtins.ByName,
-			builtins = api,
-			yield = throttleYield,
-			isCancelled = simStop,
-			loadModule = moduleLoader(player),
-			moduleName = slotName,
-			maxSteps = GameConfig.Simulate.MaxSteps,
-			limits = interpreterLimits(),
-		})
-		if outerStop() then
-			return 0, nil -- the real run was stopped; the interpreter cancels right after this
-		end
-		if result.status == "error" and result.error ~= nil then
-			return nil,
-				"simulate(): " .. formatError({
-					line = result.error.line,
-					message = result.error.message,
-					module = result.error.module or slotName,
-				})
-		elseif result.status == "internal" then
+-- simulate(slot, seconds) for one run (DroneRuntime.Simulation: cache, shared budget).
+local function simulator(
+	player: Player,
+	plot: GridService.Plot,
+	outerStop: () -> boolean,
+	cache: Simulation.CompileCache,
+	budget: Interpreter.Budget
+): DroneAPI.Simulator
+	local isUnlocked = unlockCheck(player)
+	local simulate = Simulation.new({
+		slotByName = function(name: string): (number?, string?)
+			return slotByName(player, name)
+		end,
+		sourceOf = function(slot: number): string?
+			local scripts = DataService:GetScripts(player)
+			return if scripts ~= nil then scripts[slot] else nil
+		end,
+		cache = cache,
+		newWorld = function(seconds: number): any
+			local data = DataService:GetData(player)
+			if data == nil then
+				return nil
+			end
+			local stats = GridService:GetStats(player)
+			local growthBoost, yieldBoost = DataService:GetBoostMultipliers(player)
+			local perks = GamepassService:GetPerks(player)
+			local rng = Random.new()
+			local charger = GameConfig.Stations.charger
+			return SimWorld.new({
+				size = plot.size,
+				tiles = plot.tiles :: any,
+				drone = {
+					x = charger.x,
+					y = charger.y,
+					battery = stats.batteryCapacity,
+					water = stats.waterCapacity,
+				},
+				stats = stats,
+				speedPerk = perks.speedMultiplier,
+				yieldMultiplier = perks.yieldMultiplier * yieldBoost,
+				growthBoost = growthBoost,
+				weather = WeatherService:GetFor(player),
+				currencies = data.currencies,
+				random = function(): number
+					return rng:NextNumber()
+				end,
+				duration = seconds,
+				yield = simYield,
+				shouldStop = outerStop,
+			})
+		end,
+		isUnlocked = isUnlocked,
+		loadModule = moduleLoader(player, cache),
+		throttle = throttleYield,
+		budget = budget,
+		shouldStop = outerStop,
+		limits = interpreterLimits(),
+		maxSteps = GameConfig.Simulate.MaxSteps,
+		onInternal = function(message: string?, trace: string?)
 			warn(
 				string.format(
 					"[ScriptService] simulate internal error: %s\n%s",
-					tostring(result.message),
-					tostring(result.trace)
+					tostring(message),
+					tostring(trace)
 				)
 			)
-			return nil, "The simulation failed on our side."
-		end
-		return info.harvested, nil
-	end
+		end,
+	})
+	return simulate
 end
 
 local function stopRun(player: Player)
@@ -289,6 +264,12 @@ local function startRun(player: Player, program: Parser.Program, plot: GridServi
 			NetService:Fire(player, "ScriptStatus", "running", 0)
 			TutorialService:Notify(player, "run")
 			local looped = false
+			-- One compile cache and one CPU budget for the whole run: the main program, its
+			-- imports and every simulate() it starts (DroneRuntime.Simulation, BUG-01).
+			local cache = Simulation.newCompileCache(function(source: string)
+				return compileFor(player, source)
+			end)
+			local budget: Interpreter.Budget = { steps = 0 }
 			local api = DroneAPI.create({
 				world = LiveWorld.new(player, plot, shouldStop),
 				output = {
@@ -304,7 +285,7 @@ local function startRun(player: Player, program: Parser.Program, plot: GridServi
 				},
 				shouldStop = shouldStop,
 				isUnlocked = isUnlocked,
-				simulate = simulator(player, plot, shouldStop),
+				simulate = simulator(player, plot, shouldStop, cache, budget),
 				onUnload = function(moved: { [string]: number })
 					if (moved.hay or 0) > 0 then
 						TutorialService:Notify(player, "hayUnload")
@@ -317,7 +298,10 @@ local function startRun(player: Player, program: Parser.Program, plot: GridServi
 				yield = throttleYield,
 				isCancelled = shouldStop,
 				onAction = function(line: number, inMain: boolean)
-					NetService:Fire(player, "ScriptStatus", "line", if inMain then line else 0)
+					-- Capped per player: the highlight needs a few updates a second, not a flood.
+					if lineCounter:Add(player) <= SCRIPT.MaxLineStatusPerSecond then
+						NetService:Fire(player, "ScriptStatus", "line", if inMain then line else 0)
+					end
 				end,
 				onLoop = function()
 					if not looped then
@@ -325,9 +309,10 @@ local function startRun(player: Player, program: Parser.Program, plot: GridServi
 						TutorialService:Notify(player, "loop")
 					end
 				end,
-				loadModule = moduleLoader(player),
+				loadModule = moduleLoader(player, cache),
 				moduleName = moduleName,
 				limits = interpreterLimits(),
+				budget = budget,
 			})
 		end
 
@@ -344,7 +329,7 @@ local function startRun(player: Player, program: Parser.Program, plot: GridServi
 			end
 		elseif result.status == "error" and result.error ~= nil then
 			local err = result.error
-			NetService:Fire(player, "ScriptOutput", "error", formatError(err))
+			NetService:Fire(player, "ScriptOutput", "error", Simulation.formatError(err))
 			NetService:Fire(player, "ScriptStatus", "error", if err.module == nil then err.line else 0)
 		else
 			warn(
@@ -428,6 +413,7 @@ function ScriptService:Start()
 	Players.PlayerRemoving:Connect(function(player: Player)
 		stopRun(player)
 		outputCounter:Reset(player)
+		lineCounter:Reset(player)
 		lastHints[player] = nil
 	end)
 end

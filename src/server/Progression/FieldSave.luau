@@ -7,13 +7,16 @@
 	offline tests.
 
 	  PlayerData.field = { savedAt = os.time(), tiles = { entry, ... } }
-	  entry = { x, y, crop, state, progress, watered, bareTime }   (compact array; crop "" = none)
+	  entry = { x, y, crop, state, progress, watered, bareTime, exhausted }
+	          (compact array; crop "" = none; `exhausted` = seconds of dig exhaustion left,
+	          added later and optional: a 7-value entry from an older save means 0)
 
 	RESTORE never replays growth ticks. If the player was away longer than
 	GameConfig.Field.OfflineReadySeconds (2 hours), every planted / growing crop snaps to fully
 	grown: "ready", except square crops (pumpkins), which stay fully grown and ripen through
 	their 2 x 2 (the caller runs Growth.settleSquares). A shorter absence resumes exactly where
-	the field was. Dig exhaustion and rain soak aren't saved (they last seconds).
+	the field was. Dig exhaustion IS saved and keeps counting down while you're away, so a
+	rejoin can't clear it (BUG-11). Rain soak isn't saved (it lasts seconds).
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -28,10 +31,11 @@ export type Saved = { savedAt: number, tiles: { Entry } }
 
 local STATES: { [string]: boolean } = { empty = true, planted = true, growing = true, ready = true }
 local MAX_BARE_TIME = 3600
+local MAX_EXHAUSTED = 3600 -- far above GameConfig.Dig.ExhaustSeconds: only a sanity bound
 
 local FieldSave = {}
 
--- One compact entry { x, y, crop, state, progress, watered, bareTime } (mixed value types).
+-- One compact entry { x, y, crop, state, progress, watered, bareTime, exhausted } (mixed types).
 local function entryOf(...: any): Entry
 	return { ... }
 end
@@ -56,7 +60,8 @@ function FieldSave.snapshot(tiles: { TileData }, now: number): Saved
 				tile.state,
 				math.floor(tile.progress * 1000 + 0.5) / 1000,
 				tile.watered,
-				math.floor(math.min(tile.bareTime, MAX_BARE_TIME) * 10 + 0.5) / 10
+				math.floor(math.min(tile.bareTime, MAX_BARE_TIME) * 10 + 0.5) / 10,
+				math.ceil(math.min(tile.exhausted or 0, MAX_EXHAUSTED) * 10) / 10
 			)
 		)
 	end
@@ -100,6 +105,7 @@ function FieldSave.sanitize(raw: any): Saved
 		end
 		local progress = if finite(entry[5]) then math.clamp(entry[5], 0, 1) else 0
 		local bareTime = if finite(entry[7]) then math.clamp(entry[7], 0, MAX_BARE_TIME) else 0
+		local exhausted = if finite(entry[8]) then math.clamp(entry[8], 0, MAX_EXHAUSTED) else 0
 		seen[y * maxSize + x] = true
 		table.insert(
 			result.tiles,
@@ -110,7 +116,8 @@ function FieldSave.sanitize(raw: any): Saved
 				state,
 				if state == "empty" then 0 else progress,
 				state ~= "empty" and entry[6] == true,
-				bareTime
+				bareTime,
+				exhausted
 			)
 		)
 	end
@@ -137,7 +144,9 @@ function FieldSave.restore(
 		tile.progress = entry[5] :: number
 		tile.watered = entry[6] == true
 		tile.bareTime = entry[7] :: number
-		tile.exhausted = 0
+		-- Exhaustion keeps counting down while the player is away (a rejoin never clears it).
+		local exhausted = if type(entry[8]) == "number" then entry[8] else 0
+		tile.exhausted = math.max(0, exhausted - math.max(0, away))
 		local crop = if tile.crop ~= nil then CropConfig.Crops[tile.crop] else nil
 		if snap and crop ~= nil and (tile.state == "planted" or tile.state == "growing") then
 			tile.progress = 1

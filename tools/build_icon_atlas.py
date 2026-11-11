@@ -1,5 +1,5 @@
 """
-build_icon_atlas.py - packs the UI icons into ONE texture (docs/CLAUDE_PROMPTS / ART-8).
+build_icon_atlas.py - packs the UI icons into ONE texture (.claude/commands/art-8.md).
 
   python tools/build_icon_atlas.py --import <key> <raw.png>   # add / replace one icon
   python tools/build_icon_atlas.py                             # (re)build the atlas
@@ -36,7 +36,8 @@ def atlas_order():
     match = re.search(r"IconConfig\.AtlasOrder = \{(.*?)\}", text, re.S)
     if match is None:
         raise SystemExit("IconConfig.AtlasOrder not found")
-    return re.findall(r'"([A-Za-z_]+)"', match.group(1))
+    # Digits too: keys like "yield_2x" must keep their place (or every later cell shifts).
+    return re.findall(r'"([A-Za-z0-9_]+)"', match.group(1))
 
 
 def fit(image, size, margin):
