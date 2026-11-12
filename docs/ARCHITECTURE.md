@@ -57,6 +57,7 @@ src/server  (ServerScriptService.Server)
 src/client  (StarterPlayerScripts.Client)
   ClientMain        Init() every controller, then Start()
   Controllers/      LightingController (Art Bible lighting, backdrop, weather looks),
+                    SoundController (Config.SoundConfig; silent until ids are uploaded),
                     PlotRenderer, NotifyController, HudController, CurrencyHudController,
                     TerminalController,
                     ControlModeController, WeatherFxController, TechTreeController, ShopController,

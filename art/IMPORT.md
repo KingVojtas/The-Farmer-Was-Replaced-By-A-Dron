@@ -30,6 +30,12 @@ scattered leaves and petals). The charger coils stood up as an arch across the l
 
 ## 1. 3D models → `ReplicatedStorage.Assets`
 
+**Without Studio (Open Cloud):** set `ROBLOX_API_KEY` (Assets API Read + Write, Legacy Asset
+Manage) and `ROBLOX_CREATOR_ID`, then `python tools/roblox_upload.py models`. It uploads every
+FBX as a Model, downloads each as `assets/<path>.rbxm` and records the ids in
+`art/roblox_uploads.json`. **[verify]** Open Cloud imports with default settings, not the ones
+below: check scale (Drone ≈ the procedural one), pivots and part names before relying on it.
+
 **3D Importer settings (every model):** File → Import 3D. *File Dimensions* = **Studs**, *Rig
 General* = **off** (no rig, no animation), *Anchor* = on, *Insert using scene position* = off,
 *Set pivot to scene origin* = **on** (the scripts put the pivot where the game expects it).

@@ -37,6 +37,8 @@ local specs = {
 	require("./spec/DroneStations.spec"),
 	require("./spec/Text.spec"),
 	require("./spec/UiSlices.spec"),
+	require("./spec/SoundConfig.spec"),
+	require("./spec/Project.spec"),
 }
 
 for _, register in specs do

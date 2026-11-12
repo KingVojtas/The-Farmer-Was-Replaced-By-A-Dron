@@ -22,6 +22,15 @@ local Net = require(Client.Net)
 local Components = require(Client.UI.Components)
 local Fade = require(Client.UI.Fade)
 local Theme = require(Client.UI.Theme)
+local SoundController = require(script.Parent.SoundController)
+
+-- ASSETS-8: the toast kinds that make a sound.
+local KIND_SOUNDS: { [string]: string } = {
+	research = "research",
+	purchase = "purchase",
+	warning = "error",
+	error = "error",
+}
 
 local C = Theme.Colors
 local MAX_VISIBLE = 3
@@ -67,6 +76,10 @@ end
 function NotifyController.show(kind: string, text: string)
 	if (stack :: Frame?) == nil then
 		return
+	end
+	local sound = KIND_SOUNDS[kind]
+	if sound ~= nil then
+		SoundController.play(sound)
 	end
 	local color = KIND_COLORS[kind] or C.Info
 	order += 1

@@ -97,6 +97,7 @@ local AssetLibrary = require(script.Parent.Parent.Visuals.AssetLibrary)
 local PlotDressing = require(script.Parent.Parent.Visuals.PlotDressing)
 local PlotSpace = require(script.Parent.Parent.Visuals.PlotSpace)
 local SoilLook = require(script.Parent.Parent.Visuals.SoilLook)
+local SoundController = require(script.Parent.SoundController)
 
 local DRONE = GameConfig.Drone
 local GRID = GameConfig.Grid
@@ -1106,6 +1107,14 @@ local function sameCell(a: Vector2?, b: Vector2?): boolean
 	return a ~= nil and b ~= nil and a.X == b.X and a.Y == b.Y
 end
 
+-- ASSETS-8: your drone's step sound. One tile only: a reset to the charger is a snap, not a hop.
+-- Both move paths call it; whichever lands second sees the same cell and stays quiet.
+local function hopSound(own: boolean, from: Vector2?, to: Vector2?)
+	if own and from ~= nil and to ~= nil and not sameCell(from, to) and (to - from).Magnitude <= 1.5 then
+		SoundController.play("hop")
+	end
+end
+
 -- The published DroneSerial (nil on an old server without it).
 local function readDroneSerial(plot: Model): number?
 	local serial = plot:GetAttribute("DroneSerial")
@@ -1807,6 +1816,9 @@ local function refreshStations(plotVisual: PlotVisual, force: boolean?)
 	local arriving = station == "charger" and plotVisual.activeStation ~= "charger" and force ~= true
 	plotVisual.activeStation = station
 	plotVisual.ringFast = false
+	if plotVisual.own then
+		SoundController.setLoop("charge", false) -- onBattery starts it again while charging
+	end
 	local shadow = plotVisual.drone.shadow
 	if shadow ~= nil then
 		TweenService
@@ -1840,6 +1852,7 @@ local function refreshStations(plotVisual: PlotVisual, force: boolean?)
 		task.delay(touchdown, function()
 			if visuals[plotVisual.plot] == plotVisual and plotVisual.activeStation == "charger" then
 				punchPad(plotVisual)
+				SoundController.play("land")
 			end
 		end)
 	end
@@ -2809,8 +2822,12 @@ local function refreshTile(plotVisual: PlotVisual, tile: BasePart)
 		tile:GetAttribute("Exhausted") == true
 	)
 	local flash = juicy and events.harvest
-	if soil ~= plotVisual.soil[tile] or flash then
+	local wasSoil = plotVisual.soil[tile]
+	if soil ~= wasSoil or flash then
 		plotVisual.soil[tile] = soil
+		if plotVisual.own and wasSoil ~= nil and wasSoil ~= "SoilDug" and soil == "SoilDug" then
+			SoundController.play("dig") -- dig() exhausted this tile (never on first sight)
+		end
 		SoilLook.apply(
 			tile,
 			soil,
@@ -2856,7 +2873,8 @@ local function refreshTile(plotVisual: PlotVisual, tile: BasePart)
 	-- Your drone's tool flash + body pose (ANIM-2), only for actions we are sure about
 	-- (DroneSignals.action: never unripe harvests, wild-grass regrowth or rain).
 	if plotVisual.own then
-		local action = DroneSignals.action(events, plantedWild, droneOver(plotVisual, tile), raining)
+		local over = droneOver(plotVisual, tile)
+		local action = DroneSignals.action(events, plantedWild, over, raining)
 		if action ~= nil then
 			toolFlash(
 				plotVisual,
@@ -2864,6 +2882,9 @@ local function refreshTile(plotVisual: PlotVisual, tile: BasePart)
 				if action == "plant" then PLANT_DIP elseif action == "harvest" then SCOOP_DIP else 0
 			)
 			playPose(plotVisual.drone, action)
+			SoundController.play(action) -- "plant" | "harvest" | "water"
+		elseif events.harvest and not events.ripe and over then
+			SoundController.play("unripe")
 		end
 	end
 end
@@ -3244,6 +3265,7 @@ local function onCargo(plotVisual: PlotVisual)
 	if station == "factory" then
 		playPose(drone, "factory") -- ANIM-2: a small settle, no scoop
 	end
+	SoundController.play(if station == "factory" then "deposit" else "unload")
 
 	-- ANIM-4: the bits leave the drone (one unload burst at a time).
 	local clock = os.clock()
@@ -3304,6 +3326,7 @@ local function onBattery(plotVisual: PlotVisual)
 	if plotVisual.own and plotVisual.activeStation == "charger" and not plotVisual.ringFast then
 		plotVisual.ringFast = true
 		pulseRings(plotVisual, RING_PULSE_FAST)
+		SoundController.setLoop("charge", true)
 	end
 end
 
@@ -3318,6 +3341,9 @@ local function teardownPlot(plot: Model)
 		return
 	end
 	visuals[plot] = nil
+	if plotVisual.own then
+		SoundController.setLoop("charge", false)
+	end
 	for _, connection in plotVisual.connections do
 		connection:Disconnect()
 	end
@@ -3451,6 +3477,7 @@ local function buildPlot(plot: Model, tier: string)
 		updateDroneTarget(plotVisual, false)
 		-- Your drone kicks up dust when it leaves a field tile (one step, not a teleport).
 		local to = drone.cell
+		hopSound(plotVisual.own, from, to)
 		if
 			plotVisual.own
 			and plotVisual.fullFx
@@ -3838,6 +3865,7 @@ function PlotRenderer:Start()
 				local liftOff = plotVisual.drone.move.Value.Position - Vector3.new(0, DRONE.HoverHeight, 0)
 				updateDroneTarget(plotVisual, false, cell, serial)
 				local to = plotVisual.drone.cell
+				hopSound(plotVisual.own, from, to)
 				if
 					plotVisual.own
 					and plotVisual.fullFx

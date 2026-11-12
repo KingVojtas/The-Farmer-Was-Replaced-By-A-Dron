@@ -60,12 +60,18 @@ meter_track, meter_cap, toast, modal_header → `art/ui/<name>.png`, SliceCenter
 | Thumbnail 2: terminal running code | 1920×1080 | Studio capture (recipe B) | missing |
 | Thumbnail 3: Tech Tree | 1920×1080 | Studio capture (recipe C) | missing |
 
-## 6. Sound (ASSETS-8, only if the user says yes)
+## 6. Sound (ASSETS-8, approved by the user 2026-11-12)
 
-drone hop, land on charger, plant, water, harvest, unripe harvest, dig / fossil, deposit,
-refine, charge loop, research, purchase, UI click, UI hover, error + 1 calm ambient loop →
-`art/audio/`. Status: not started (needs the user's go-ahead; no SoundController without it).
+17 one-shots (hop, land, plant, water, harvest, unripe, dig, fossil, deposit, unload, refine,
+research, purchase, click, hover, error) + 2 seamless loops (charge 2 s, ambient 24 s) →
+`art/audio/<name>.ogg`, synthesised by `tools/build_sfx.py` (pure Python + ffmpeg; ForgeGUI had
+no credits). Event → file → volume, and when each plays: `src/shared/Config/SoundConfig.luau`;
+played by `Client.Controllers.SoundController`. Status: **generated**, code hooked up, silent
+until uploaded (every `assetId` is 0). Upload: `python tools/roblox_upload.py audio` (writes the
+ids into SoundConfig).
 
-FBX + GLB for every model: `tools/blender/out/` (git-ignored; previews in `previews/`). Next step: Studio import, see `art/IMPORT.md` §1.
+FBX + GLB for every model: `tools/blender/out/` (git-ignored; previews in `previews/`). Next
+step: `python tools/roblox_upload.py models` (Open Cloud key, downloads `assets/<path>.rbxm`), or
+the Studio import in `art/IMPORT.md` §1.
 
 Roblox ids of everything uploaded: `art/ROBLOX_ASSETS.md`.

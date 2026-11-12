@@ -12,6 +12,7 @@ local Controllers = script.Parent.Controllers
 
 local ORDER = {
 	"LightingController", -- first: the world look is applied before anything renders
+	"SoundController", -- before everything that plays sounds (its calls are safe either way)
 	"PlotRenderer",
 	"NotifyController",
 	"HudController",
