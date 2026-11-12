@@ -17,7 +17,8 @@ tree), how to reproduce it, and the direction for a fix.
 * **Not audited line by line:** `HudController`, `CurrencyHudController` (except the diff),
   `TechTreeController`, `MainMenuController`, `TutorialController`, `WeatherFxController`,
   `LightingController`, `NotifyController`, `UI/*`, `PlotDressing`, `SoilLook`, and the crop/FX
-  half of `PlotRenderer`. `/bugfix` phase 5 covers them.
+  half of `PlotRenderer`. `/bugfix` phase 5 covers them (all read by 2026-11-12, see
+  "Phase 5 findings").
 * Not run in Roblox Studio. Anything that depends on engine behaviour is marked PLAUSIBLE.
 
 Severity: **P0** = a live server can break or be abused · **P1** = data loss or a broken core
@@ -46,8 +47,14 @@ check.
 | BUG-15 | P3 | CONFIRMED | FIXED (2026-11-11); AtlasOrder is left to /assets | Docs and comments drifted from the code (test count, gates, schema version, leaderstats, dig rule, field saving) |
 | BUG-16 | P3 | CONFIRMED | FIXED (2026-11-11) | `GridService:PlantTile` passes the hub weather into an unused parameter (dead code that misleads readers) |
 | BUG-17 | P3 | PLAUSIBLE | FIXED (2026-11-11), needs Studio | Tab may indent twice if the TextBox inserts `\t` itself (InputBegan adds 4 spaces, and the tab is also converted) |
-| BUG-18 | P3 | CONFIRMED | OPEN, needs Studio + user decision to commit | 5 client files carry uncommitted, Studio-unverified work (V-CONSOLE, height beam, segmented battery) |
-| BUG-19 | P3 | PLAUSIBLE | OPEN (listed only) | `SoilLook.colorTweens` is weak-keyed, but each Tween value references its tile, so departed plots' tiles may never be freed |
+| BUG-18 | P3 | CONFIRMED | OPEN, needs Studio (committed in `1ffb8b7`) | 5 client files carry Studio-unverified work (V-CONSOLE, height beam, segmented battery) |
+| BUG-19 | P3 | PLAUSIBLE | FIXED (2026-11-12) | `SoilLook.colorTweens` is weak-keyed, but each Tween value references its tile, so departed plots' tiles may never be freed |
+| BUG-20 | P3 | CONFIRMED | FIXED (2026-11-12), needs Studio | The Tech Tree's max-tier star glow (endless tween) keeps running after the panel closes |
+| BUG-21 | P3 | CONFIRMED (latent) | FIXED (2026-11-12) | A Fade that captures an object before its 9-slice skin lands later restores the flat background and the hidden text |
+| BUG-22 | P3 | CONFIRMED | OPEN (listed only) | `pingCard` restores a stroke it captured mid-tween: a quick second unlock or card click leaves a wrong outline |
+| BUG-23 | P3 | CONFIRMED | OPEN (listed only) | The open Tech Tree rebuilds every card's cost chips on each currency change (instance churn) |
+| BUG-24 | P3 | CONFIRMED | OPEN (listed only, design call) | Skinned buttons lose their AutoButtonColor hover / press feedback (background is transparent) |
+| BUG-25 | P3 | PLAUSIBLE | OPEN (listed only) | `Components.hover` can stay at 1.04 on touch (no MouseLeave) and after press-drag-release |
 
 Not bugs, but missing content (this is what `/assets` is for): every UI icon is an emoji
 fallback (`IconAtlas.assetId = 0`, only `hay` / `wheat` have art), `assets/` contains no models
@@ -305,9 +312,9 @@ spaces. Check in Studio, then keep exactly one of the two paths.
 
 ### BUG-18: uncommitted, unverified client work
 
-**Status: OPEN, needs Studio + user decision to commit.**
+**Status: OPEN, needs Studio. Committed in `1ffb8b7` (2026-11-12); only the Studio check is left.**
 
-The working tree holds V-CONSOLE (letterbox, FOV, reticle, hiding other players), the
+The working tree held V-CONSOLE (letterbox, FOV, reticle, hiding other players), the
 V-CONTACT height beam and the segmented battery HUD in `ControlModeController`,
 `CurrencyHudController`, `PlotRenderer`, `TerminalController` and `TerminalView`. They pass
 lint and types but have no Studio verification. BUG-12 is inside them. Verify them in Studio,
@@ -323,12 +330,18 @@ No P0/P1 turned up. Checked and fine: the menu orbit only hands the camera back 
 it; `UIState` lets only one panel be open; PlotDressing's deferred rebuild stops once its
 folder is destroyed; destroyed crops leave the sway list; the tutorial bob only runs while the
 terminal is enabled; weather particles have their own caps (the 40-particle budget is for crop
-FX). Not read line by line yet: `TechTreeController`, `LightingController`, `UI/Components`,
-`UI/Fade`, `UI/Theme`.
+FX). Read on 2026-11-12: `TechTreeController`, `LightingController`, `UI/Components`,
+`UI/Fade`, `UI/Theme` (BUG-20 to BUG-25 below). Checked and fine there: the LightingController
+profile tweens replace each other per property, the breathe loop only starts from a COMPLETED
+ease-in, `adopt` never picks up another controller's effect (no other code makes Lighting
+effects), the menu blur is never touched; `Net.invoke` can't throw, so Research's `busy` always
+clears; a modal closed and reopened mid-tween stays visible; Fade's per-root tables are emptied
+when each fade ends; `string.format("%d")` truncates fractions in Luau (no error on a fractional
+wallet).
 
 ### BUG-19: SoilLook's tween map may keep departed plots' tiles alive
 
-**Status: OPEN (listed only).**
+**Status: FIXED (2026-11-12).** Each colour tween removes its own entry on `Completed`.
 
 * **Where:** `src/client/Visuals/SoilLook.luau:87`. `colorTweens` is `{ [tile] = Tween }` with
   weak KEYS, and a Tween keeps a strong reference to its Instance (the tile). Luau's weak
@@ -338,6 +351,71 @@ FX). Not read line by line yet: `TechTreeController`, `LightingController`, `UI/
   session (PLAUSIBLE, not measured).
 * **Fix direction:** drop the entry when its tween finishes
   (`tween.Completed:Once(function() if colorTweens[tile] == tween then colorTweens[tile] = nil end end)`).
+
+### BUG-20: the max-tier star glow runs after the Tech Tree closes
+
+**Status: FIXED (2026-11-12), needs Studio.**
+
+* **Where:** `src/client/Controllers/TechTreeController.luau` `refresh()` (the `glow` tween,
+  `RepeatCount = -1`). The `Card.glow` comment says "only while shown", but nothing cancelled it
+  on close, so every researched max-tier node (4 today) kept a UIStroke tween running all session.
+* **Fix:** `stopGlows()` runs on both close paths (X button and `UIState`) and puts the stroke
+  back to 2 / 0; `refresh()` on the next open starts the glow again.
+
+### BUG-21: Fade can undo a 9-slice skin
+
+**Status: FIXED (2026-11-12) (latent: no current call site triggers it).**
+
+* **Where:** `src/client/UI/Theme.luau` `Theme.skin` (deferred one frame) and
+  `src/client/UI/Fade.luau` `capture`. If an object's first fade starts in the frame it was
+  built, Fade records BackgroundTransparency 0 / TextTransparency 0 before the skin sets them to
+  1, and every later show / restore brings back the flat background and the original text under
+  `SkinText`. Today's fades (terminal, Control Mode buttons, toasts) start on input or use
+  unskinned frames, so it doesn't show yet.
+* **Fix:** `Theme.skin` calls `Fade.setResting` for the two values it changes.
+
+### BUG-22: `pingCard` can restore a stale outline
+
+**Status: OPEN (listed only).**
+
+* **Where:** `TechTreeController.luau` `pingCard`: it reads `stroke.Color` / `Thickness` and
+  tweens back to them over 0.3 s. A second ping on the same card inside 0.3 s reads the flash
+  values (lime, 4). Clicking another card meanwhile sets the old card's thickness to 1.5, but
+  the running tween keeps writing toward 3, so the old card still looks selected.
+* **Fix direction:** keep the flash tween on the `Card`, cancel it in `selectNode` / `refresh`
+  before they set the stroke, and tween back to the values `refresh` / `selectNode` compute.
+
+### BUG-23: the open Tech Tree rebuilds all cost chips on every currency change
+
+**Status: OPEN (listed only).**
+
+* **Where:** `TechTreeController.luau` `refresh()` (from `refreshIfOpen` on every `Cur_*`
+  change): it destroys and rebuilds each unresearched card's chips (frame + icon + label +
+  stroke + list) and the detail cost rows. A running drone that deposits while the panel is open
+  causes hundreds of new instances per deposit.
+* **Fix direction:** build the chips once per card and only update the amount colour / stroke
+  in `refresh()`.
+
+### BUG-24: skinned buttons have no hover / press feedback
+
+**Status: OPEN (listed only; it changes the look, so it's the user's call).**
+
+* **Where:** `Theme.skin` sets `BackgroundTransparency = 1`, so `AutoButtonColor` has nothing to
+  darken on `Theme.button` / `Components.ghostButton` (RUN, STOP, RENAME, modal X, ...). Only
+  buttons that also use `Components.hover` still react.
+* **Fix direction:** tint the `Skin` ImageLabel on hover / press (for example `ImageColor3`
+  x 0.85), or call `Components.hover` on every skinned button.
+
+### BUG-25: `Components.hover` can stick at 1.04
+
+**Status: OPEN (listed only), PLAUSIBLE.**
+
+* **Where:** `src/client/UI/Components.luau` `Components.hover`. On touch, `MouseEnter` fires on
+  a tap but `MouseLeave` often doesn't, so the button stays at 1.04. `MouseButton1Up` also sets
+  1.04 without checking that the pointer is still over the button.
+* **Fix direction:** track `hovered` from MouseEnter / MouseLeave, go back to 1 on `Activated`
+  for touch input (`UserInputService.TouchEnabled`), and use `if hovered then 1.04 else 1` on
+  release.
 
 ## Fix log (`/bugfix`, 2026-11-11)
 
@@ -357,6 +435,9 @@ FX). Not read line by line yet: `TechTreeController`, `LightingController`, `UI/
 | BUG-15 | `docs/ARCHITECTURE.md`, `Data/DataTemplate`, `Services/DataService`, `Services/GridService`, `Config/GameConfig`, `assets/README.md`, `Visuals/AssetLibrary`, `tools/build_icon_atlas.py`; `docs/CLAUDE_PROMPTS.md` moved to `docs/archive/` | review |
 | BUG-16 | `Progression/Growth`, `SimWorld`, `GridService`, `WeatherService` (`GetCurrent` removed) | type check + tests |
 | BUG-17 | `Util/Text.withoutTypedTab`, `Controllers/TerminalController` | `tests/spec/Text.spec.luau` (4) + Studio |
+| BUG-19 (2026-11-12) | `Visuals/SoilLook` (`Completed:Once` clears the entry) | review + Studio |
+| BUG-20 (2026-11-12) | `Controllers/TechTreeController` (`stopGlows` on close) | review + Studio |
+| BUG-21 (2026-11-12) | `UI/Theme` (`Fade.setResting` in `Theme.skin`) | review |
 
 ## Studio playtest checklist (everything marked "needs Studio")
 
@@ -391,4 +472,9 @@ FX). Not read line by line yet: `TechTreeController`, `LightingController`, `UI/
 11. **BUG-18:** V-CONSOLE (letterbox, console FOV 55, reticle only while the terminal is
     collapsed, other players hidden only in Control Mode and visible again after), the
     V-CONTACT height beam (Control Mode only), and the 5-cell battery in the top-right HUD.
-    Then decide whether to commit.
+    (Already committed in `1ffb8b7`; revert in a follow-up if something is off.)
+12. **BUG-20:** research a max-tier node (for example Grid Expansion III), open the Tech Tree:
+    the star badge pulses. Close it with X, open it, close it with the HUD button: each time
+    the pulse stops and the badge outline is a solid 2 px; on reopen it pulses again.
+13. **BUG-19:** stay near other players' plots for a few minutes and let them leave; Developer
+    Console > Memory > `Instances` doesn't keep climbing with each departed plot.

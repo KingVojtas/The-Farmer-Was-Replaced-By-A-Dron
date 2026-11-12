@@ -22,6 +22,7 @@ local TweenService = game:GetService("TweenService")
 
 local Currencies = require(ReplicatedStorage.Shared.Config.Currencies)
 local UiSlices = require(ReplicatedStorage.Shared.Config.UiSlices)
+local Fade = require(script.Parent.Fade) -- Fade needs nothing from Theme: no require cycle
 
 local Theme = {}
 
@@ -232,6 +233,9 @@ function Theme.skin(object: GuiObject, name: string)
 		end
 		skin.Parent = object
 		object.BackgroundTransparency = 1
+		-- BUG-21: if a Fade captured this object before the skin landed, its later restore would
+		-- bring back the flat background (and the hidden text below). Record the skinned values.
+		Fade.setResting(object, "BackgroundTransparency", 1)
 		for _, child in object:GetChildren() do
 			if child:IsA("UIStroke") then
 				child.Enabled = false
@@ -261,6 +265,7 @@ function Theme.skin(object: GuiObject, name: string)
 				end)
 			end
 			text.TextTransparency = 1
+			Fade.setResting(object, "TextTransparency", 1)
 		end
 	end)
 end

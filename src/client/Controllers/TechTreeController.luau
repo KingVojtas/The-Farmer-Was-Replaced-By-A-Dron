@@ -407,6 +407,20 @@ local function refresh()
 	end
 end
 
+-- BUG-20: the star glow is endless, so it only runs while the panel is open; refresh() on the
+-- next open starts it again.
+local function stopGlows()
+	for _, card in cards do
+		local glow = card.glow
+		if glow ~= nil then
+			glow:Cancel()
+			card.glow = nil
+			card.badgeStroke.Thickness = 2
+			card.badgeStroke.Transparency = 0
+		end
+	end
+end
+
 local function buildCard(id: string)
 	local node = Tech.Nodes[id]
 	local center = nodeCenter(id)
@@ -729,9 +743,11 @@ function TechTreeController:Init()
 		applyZoom()
 	end)
 
-	modal.onClose = function()
+	local function onClosed()
+		stopGlows()
 		UIState.notifyClosed("TechTree")
 	end
+	modal.onClose = onClosed
 	UIState.register("TechTree", {
 		open = function()
 			modal.open()
@@ -741,11 +757,10 @@ function TechTreeController:Init()
 			end
 		end,
 		close = function()
+			stopGlows()
 			modal.onClose = nil
 			modal.close()
-			modal.onClose = function()
-				UIState.notifyClosed("TechTree")
-			end
+			modal.onClose = onClosed
 		end,
 	})
 	gui.Parent = player:WaitForChild("PlayerGui")

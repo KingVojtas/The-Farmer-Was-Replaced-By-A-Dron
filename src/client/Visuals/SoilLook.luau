@@ -230,6 +230,13 @@ function SoilLook.apply(tile: BasePart, state: SoilState, flash: Color3?, instan
 	end
 	local tween = TweenService:Create(tile, if flash ~= nil then FLASH_FADE else FADE, { Color = look.color })
 	colorTweens[tile] = tween
+	-- BUG-19: drop the entry once the tween ends. The Tween references its tile, and Luau's weak
+	-- tables aren't ephemerons, so a kept entry would pin a departed plot's tile forever.
+	tween.Completed:Once(function()
+		if colorTweens[tile] == tween then
+			colorTweens[tile] = nil
+		end
+	end)
 	tween:Play()
 end
 
