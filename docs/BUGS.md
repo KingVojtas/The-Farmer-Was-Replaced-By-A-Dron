@@ -33,7 +33,7 @@ check.
 | BUG-01 | P0 | CONFIRMED | FIXED (2026-11-11) | `simulate()` is a zero-time "action": one player can freeze the server (≈3.6 s of CPU per second) and flood remotes |
 | BUG-02 | P1 | CONFIRMED (race) | FIXED (2026-11-11) | On leave, the field snapshot depends on the order of the `PlayerRemoving` handlers, so the last ≤90 s of field changes can be lost |
 | BUG-03 | P1 | CONFIRMED | FIXED (2026-11-11), needs Studio | The terminal can autosave or RUN before the saved scripts load, which overwrites the player's saved slot |
-| BUG-04 | P1 | OPEN | OPEN, needs Studio (BUG-05/06 fixed) | FIX-DRONE: the drone hop is still unverified in Studio (the contract is coded; BUG-05/06 are candidate causes) |
+| BUG-04 | P1 | CONFIRMED | VERIFIED in Studio (2026-11-12) | FIX-DRONE: the drone hops with the terminal (checked over Studio MCP after BUG-26) |
 | BUG-05 | P2 | PLAUSIBLE | FIXED (2026-11-11), needs Studio | The render-loop poll and the `DroneMoved` remote have no ordering (no serial), so a lagging attribute can tween the drone back |
 | BUG-06 | P2 | CONFIRMED | FIXED (2026-11-11) | `lastMoved[plotIndex]` is never cleared; a new owner of a reused plot index starts at the old owner's cell |
 | BUG-07 | P2 | CONFIRMED (rare) | FIXED (2026-11-11) | Session lock is per server, not per load: a same-server rejoin after a slow release can load stale data and then get kicked |
@@ -55,6 +55,7 @@ check.
 | BUG-23 | P3 | CONFIRMED | OPEN (listed only) | The open Tech Tree rebuilds every card's cost chips on each currency change (instance churn) |
 | BUG-24 | P3 | CONFIRMED | OPEN (listed only, design call) | Skinned buttons lose their AutoButtonColor hover / press feedback (background is transparent) |
 | BUG-25 | P3 | PLAUSIBLE | OPEN (listed only) | `Components.hover` can stay at 1.04 on touch (no MouseLeave) and after press-drag-release |
+| BUG-26 | P0 | CONFIRMED | FIXED (2026-11-12), verified in Studio | `rojo build` drops the Baseplate's `Position`: it sits at the origin, top at y = 8, and buries every farm and drone |
 
 Not bugs, but missing content (this is what `/assets` is for): every UI icon is an emoji
 fallback (`IconAtlas.assetId = 0`, only `hay` / `wheat` have art), `assets/` contains no models
@@ -135,7 +136,12 @@ fallback (`IconAtlas.assetId = 0`, only `hay` / `wheat` have art), `assets/` con
 
 ### BUG-04: FIX-DRONE is still unverified in Studio
 
-**Status: OPEN, needs Studio (BUG-05/06 fixed).**
+**Status: VERIFIED in Studio (2026-11-12), over the Studio MCP server, once BUG-26 was fixed.**
+Starter script, Control Mode, 3x3: the published cell went (0,-1) > (0,0) > (1,0) > (2,0) >
+(1,0) > (0,0) > (0,-1) with `DroneSerial` 1..6, the client drone's pivot followed every step
+(hovering at y ~ 6.9 over tiles, ~ 3.2 on the pad), there was no teleport at the end, 3 grass tiles were
+harvested and "Unloaded 3 items into the silo" (Hay 3), and the tutorial moved to step 2.
+Still not checked: Stop + Run again, no `Assets.Drone`, and a reused plot index (checklist 1).
 
 * `.claude/commands/fix-drone.md` lists the P0 "drone doesn't hop with the terminal". The whole
   contract is in place: `DroneMoveTime`, then `DroneX`/`DroneY`/`Drone`, then `DroneSerial`,
@@ -417,6 +423,22 @@ wallet).
   for touch input (`UserInputService.TouchEnabled`), and use `if hovered then 1.04 else 1` on
   release.
 
+### BUG-26: the farm is buried under the Baseplate in a `rojo build` place
+
+**Status: FIXED (2026-11-12), verified in Studio. Present since the first commit.**
+
+* **Where:** `default.project.json` set `Workspace.Baseplate` and `SpawnLocation` with
+  `"Position"`. That property isn't serialised (the place file stores `CFrame`), so
+  `rojo build` silently dropped it. The 2048 x 16 x 2048 Baseplate sat at the origin with its
+  top at y = 8, above every plot: tiles (y = 1.3), stations, crops and the hovering drone were
+  all inside it. Players stood on an empty green field. `rojo serve` hid the bug because the
+  Rojo plugin sets `Position` at runtime.
+* **Found by:** playing `build/DroneFarm.rbxlx` over the Studio MCP server: a raycast down
+  from 100 studs over a tile hit `Workspace.Baseplate` at y = 8.00.
+* **Fix:** both parts are placed with an explicit `CFrame` (`{"CFrame": {"position": ...}}`).
+  `tests/spec/Project.spec.luau` fails if any project node sets Position / Orientation /
+  Rotation, or if the Baseplate top isn't at y = 0. Both tests fail on the old file.
+
 ## Fix log (`/bugfix`, 2026-11-11)
 
 | ID | Files | Verified by |
@@ -438,6 +460,7 @@ wallet).
 | BUG-19 (2026-11-12) | `Visuals/SoilLook` (`Completed:Once` clears the entry) | review + Studio |
 | BUG-20 (2026-11-12) | `Controllers/TechTreeController` (`stopGlows` on close) | review + Studio |
 | BUG-21 (2026-11-12) | `UI/Theme` (`Fade.setResting` in `Theme.skin`) | review |
+| BUG-26 (2026-11-12) | `default.project.json` (CFrame, not Position) | `tests/spec/Project.spec.luau` (2) + Studio MCP playtest |
 
 ## Studio playtest checklist (everything marked "needs Studio")
 
