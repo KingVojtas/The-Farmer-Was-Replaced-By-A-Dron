@@ -19,8 +19,22 @@ ReplicatedStorage.Assets
 ├── Crops/<cropId>/<stage>        cropId: grass wheat carrot tree sunflower pumpkin cactus
 │                                 stage:  sprout | growing | ready
 ├── Hats/<style>                  Model (pivot = where it sits on the drone's back)
-└── Stations/charger, factory     Model (pivot = top of the station tile)
+├── Stations/charger, factory     Model (pivot = top of the station tile)
+├── Tiles/Soil                    Model, one MeshPart 6 x 0.6 x 6 (pivot = its centre): the SERVER
+│                                 clones it for every field tile (GridService.newTilePart)
+└── Dressing/FencePost, FenceRail, Walkway, SignPost
+                                  PlotDressing's kit: the rail stretches along Z, the walkway along X
 ```
+
+The world around the plots is NOT here: `map/Map.rbxm` (Workspace.Map) is composed by
+`tools/build_map.luau` from `map/props/*.rbxm` (Blender `tools/blender/props.py` and
+`buildings.py`).
+
+**Detail textures:** the model parts carry a `MaterialVariant` (DroneHull, CropLeaf, CropSkin,
+Bark, Planks, Shingles, Stone; in MaterialService via `materials.project.json`). The maps are
+light and neutral, and `Part.Color` tints them, so recolouring a part (PaintSlot, cosmetics)
+keeps working. If a part's `Material` is changed to anything but the variant's BaseMaterial,
+the variant no longer applies and the plain material shows.
 
 **The game guards every clone** (`AssetLibrary`):
 

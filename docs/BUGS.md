@@ -41,21 +41,22 @@ check.
 | BUG-09 | P2 | CONFIRMED | FIXED (2026-11-11) | `refine()` spends battery but never publishes it (HUD and drone strip go stale) |
 | BUG-10 | P2 | CONFIRMED | FIXED (2026-11-11) | Cargo already aboard while the drone sits on the charger (rejoin) is not banked; `charge()` doesn't unload |
 | BUG-11 | P2 | CONFIRMED | FIXED (2026-11-11); the 'dug' look is for /assets | Dig exhaustion is invisible to clients and isn't saved (a rejoin clears it) |
-| BUG-12 | P2 | CONFIRMED | FIXED (2026-11-11), needs Studio | Control Mode FOV drifts: the exit FOV tween (1.1 s) outlives the exit (0.9 s); re-entering saves a mid-tween FOV |
-| BUG-13 | P2 | CONFIRMED | FIXED (2026-11-11) | Client RUN cooldown (1.2 s) is shorter than the server bucket allows; spam shows "Couldn't reach the server (Rejected)" |
+| BUG-12 | P2 | CONFIRMED | FIXED (2026-11-11), VERIFIED in Studio (2026-11-12, `tools/studio_smoke.py`) | Control Mode FOV drifts: the exit FOV tween (1.1 s) outlives the exit (0.9 s); re-entering saves a mid-tween FOV |
+| BUG-13 | P2 | CONFIRMED | FIXED (2026-11-11), VERIFIED in Studio (2026-11-12, `tools/studio_smoke.py`) | Client RUN cooldown (1.2 s) is shorter than the server bucket allows; spam shows "Couldn't reach the server (Rejected)" |
 | BUG-14 | P3 | CONFIRMED | FIXED (2026-11-11) | No `.gitattributes` while `core.autocrlf=true` and StyLua demands LF; fresh clones fail `stylua --check` |
 | BUG-15 | P3 | CONFIRMED | FIXED (2026-11-11); AtlasOrder is left to /assets | Docs and comments drifted from the code (test count, gates, schema version, leaderstats, dig rule, field saving) |
 | BUG-16 | P3 | CONFIRMED | FIXED (2026-11-11) | `GridService:PlantTile` passes the hub weather into an unused parameter (dead code that misleads readers) |
-| BUG-17 | P3 | PLAUSIBLE | FIXED (2026-11-11), needs Studio | Tab may indent twice if the TextBox inserts `\t` itself (InputBegan adds 4 spaces, and the tab is also converted) |
-| BUG-18 | P3 | CONFIRMED | OPEN, needs Studio (committed in `1ffb8b7`) | 5 client files carry Studio-unverified work (V-CONSOLE, height beam, segmented battery) |
+| BUG-17 | P3 | PLAUSIBLE | FIXED (2026-11-11), VERIFIED in Studio (2026-11-12, `tools/studio_smoke.py`) | Tab may indent twice if the TextBox inserts `\t` itself (InputBegan adds 4 spaces, and the tab is also converted) |
+| BUG-18 | P3 | CONFIRMED | VERIFIED in Studio (2026-11-12) except hiding other players (needs 2 players) | 5 client files carry Studio-unverified work (V-CONSOLE, height beam, segmented battery) |
 | BUG-19 | P3 | PLAUSIBLE | FIXED (2026-11-12) | `SoilLook.colorTweens` is weak-keyed, but each Tween value references its tile, so departed plots' tiles may never be freed |
 | BUG-20 | P3 | CONFIRMED | FIXED (2026-11-12), needs Studio | The Tech Tree's max-tier star glow (endless tween) keeps running after the panel closes |
 | BUG-21 | P3 | CONFIRMED (latent) | FIXED (2026-11-12) | A Fade that captures an object before its 9-slice skin lands later restores the flat background and the hidden text |
 | BUG-22 | P3 | CONFIRMED | OPEN (listed only) | `pingCard` restores a stroke it captured mid-tween: a quick second unlock or card click leaves a wrong outline |
 | BUG-23 | P3 | CONFIRMED | OPEN (listed only) | The open Tech Tree rebuilds every card's cost chips on each currency change (instance churn) |
-| BUG-24 | P3 | CONFIRMED | OPEN (listed only, design call) | Skinned buttons lose their AutoButtonColor hover / press feedback (background is transparent) |
-| BUG-25 | P3 | PLAUSIBLE | OPEN (listed only) | `Components.hover` can stay at 1.04 on touch (no MouseLeave) and after press-drag-release |
+| BUG-24 | P3 | CONFIRMED | FIXED (2026-11-12) | Skinned buttons lose their AutoButtonColor hover / press feedback (background is transparent) |
+| BUG-25 | P3 | PLAUSIBLE | FIXED (2026-11-12), needs a touch device | `Components.hover` can stay at 1.04 on touch (no MouseLeave) and after press-drag-release |
 | BUG-26 | P0 | CONFIRMED | FIXED (2026-11-12), verified in Studio | `rojo build` drops the Baseplate's `Position`: it sits at the origin, top at y = 8, and buries every farm and drone |
+| BUG-27 | P3 | CONFIRMED | FIXED (2026-11-12), verified in Studio | Control Mode never takes the camera back if another script hands it to the default scripts mid-session |
 
 Not bugs, but missing content (this is what `/assets` is for): every UI icon is an emoji
 fallback (`IconAtlas.assetId = 0`, only `hay` / `wheat` have art), `assets/` contains no models
@@ -241,7 +242,7 @@ Still not checked: Stop + Run again, no `Assets.Drone`, and a reused plot index 
 
 ### BUG-12: Control Mode FOV drift (uncommitted V-CONSOLE work)
 
-**Status: FIXED (2026-11-11), needs Studio.**
+**Status: FIXED (2026-11-11), VERIFIED in Studio (2026-11-12, `tools/studio_smoke.py`):** 5 fast enter/leave cycles, the exploring FOV is 70.0 again.
 
 * **Where:** `src/client/Controllers/ControlModeController.luau:353-383` (`setConsole`: the
   FOV tween uses `CAMERA_EASING` = EnterTime 1.1 s), `:690-720` (exit uses ExitTime 0.9 s), and
@@ -255,7 +256,7 @@ Still not checked: Stop + Run again, no `Assets.Drone`, and a reused plot index 
 
 ### BUG-13: the RUN button cooldown is shorter than the server rate limit
 
-**Status: FIXED (2026-11-11).**
+**Status: FIXED (2026-11-11), VERIFIED in Studio (2026-11-12, `tools/studio_smoke.py`):** 8 presses just past the 1.2 s cooldown end in "Slow down a moment ...", never "Couldn't reach the server".
 
 * **Where:** `TerminalController.luau:37` (`RUN_COOLDOWN = 1.2`) against
   `src/shared/Net/RemoteSchema.luau:255` (`burst = 3, perSecond = 0.5`).
@@ -310,7 +311,7 @@ the wrong weather.
 
 ### BUG-17: Tab may indent twice (PLAUSIBLE, check in Studio)
 
-**Status: FIXED (2026-11-11), needs Studio.**
+**Status: FIXED (2026-11-11), VERIFIED in Studio (2026-11-12, `tools/studio_smoke.py`):** one Tab adds exactly 4 spaces and no tab character.
 
 `TerminalController.luau:113-127` converts any `\t` into 4 spaces, and the `InputBegan` Tab
 handler (`:311-315`) inserts another 4. If the TextBox inserts `\t` itself, one Tab gives 8
@@ -318,7 +319,7 @@ spaces. Check in Studio, then keep exactly one of the two paths.
 
 ### BUG-18: uncommitted, unverified client work
 
-**Status: OPEN, needs Studio. Committed in `1ffb8b7` (2026-11-12); only the Studio check is left.**
+**Status: VERIFIED in Studio (2026-11-12, `tools/studio_smoke.py --checks console`):** letterbox 24 px and console FOV 55 in Control Mode, the 5-cell battery in the HUD. Hiding other players needs a 2-player test.
 
 The working tree held V-CONSOLE (letterbox, FOV, reticle, hiding other players), the
 V-CONTACT height beam and the segmented battery HUD in `ControlModeController`,
@@ -404,7 +405,7 @@ wallet).
 
 ### BUG-24: skinned buttons have no hover / press feedback
 
-**Status: OPEN (listed only; it changes the look, so it's the user's call).**
+**Status: FIXED (2026-11-12).** The user asked for it. `Theme.skin` darkens the Skin image on hover (x0.9) and press (x0.78) while `AutoButtonColor` is on; touch release resets it.
 
 * **Where:** `Theme.skin` sets `BackgroundTransparency = 1`, so `AutoButtonColor` has nothing to
   darken on `Theme.button` / `Components.ghostButton` (RUN, STOP, RENAME, modal X, ...). Only
@@ -414,7 +415,7 @@ wallet).
 
 ### BUG-25: `Components.hover` can stick at 1.04
 
-**Status: OPEN (listed only), PLAUSIBLE.**
+**Status: FIXED (2026-11-12), needs a touch device.** `Components.hover` tracks `hovered`, releases to 1.04 only while hovered, and a lifted finger (`InputEnded` Touch) settles it to 1.
 
 * **Where:** `src/client/UI/Components.luau` `Components.hover`. On touch, `MouseEnter` fires on
   a tap but `MouseLeave` often doesn't, so the button stays at 1.04. `MouseButton1Up` also sets
@@ -439,6 +440,18 @@ wallet).
   `tests/spec/Project.spec.luau` fails if any project node sets Position / Orientation /
   Rotation, or if the Baseplate top isn't at y = 0. Both tests fail on the old file.
 
+### BUG-27: Control Mode loses the camera to another script for good
+
+**Status: FIXED (2026-11-12), verified in Studio.**
+
+* **Where:** `ControlModeController` owned the camera by setting `CameraType = Scriptable` once
+  (on enter / on a new `CurrentCamera`). If anything else set it back to `Custom` mid-session,
+  the default camera scripts followed the character, and the player saw a close-up of the walkway in
+  the middle of Control Mode. Found with Studio's MCP `screen_capture` (it resets the camera
+  type); a plugin or a core script could do the same.
+* **Fix:** the per-frame render guard re-takes the camera while Entering / Controlling and,
+  once arrived, puts it back on the bird's-eye view.
+
 ## Fix log (`/bugfix`, 2026-11-11)
 
 | ID | Files | Verified by |
@@ -461,8 +474,16 @@ wallet).
 | BUG-20 (2026-11-12) | `Controllers/TechTreeController` (`stopGlows` on close) | review + Studio |
 | BUG-21 (2026-11-12) | `UI/Theme` (`Fade.setResting` in `Theme.skin`) | review |
 | BUG-26 (2026-11-12) | `default.project.json` (CFrame, not Position) | `tests/spec/Project.spec.luau` (2) + Studio MCP playtest |
+| BUG-24/25 (2026-11-12) | `UI/Theme` (Skin hover/press tint), `UI/Components` (`hover`) | review + Studio |
+| BUG-27 (2026-11-12) | `Controllers/ControlModeController` (render guard) | `tools/studio_smoke.py` screenshots |
 
 ## Studio playtest checklist (everything marked "needs Studio")
+
+**Automated (2026-11-12):** `python tools/studio_smoke.py --checks all` drives Studio over its
+built-in MCP server. It covers the core loop (farm above ground, PLAY straight into Control Mode,
+the starter script's hops, Hay), BUG-04, BUG-12, BUG-13, BUG-17, BUG-18 (letterbox, FOV,
+battery) and errors in Output. Latest run: 17/17 passed. The items below that it doesn't cover
+still need a person or real DataStores.
 
 1. **BUG-04 / 05 / 06, drone hop (fix-drone Verify):** Control Mode on a 3×3, RUN the starter
    script. The lime line reaches `move_up()` and the drone hops one tile (no teleport at the
@@ -488,8 +509,9 @@ wallet).
 8. **BUG-12:** enter and leave Control Mode quickly 5 times (re-enter right as the camera
    lands): back in exploring, `workspace.CurrentCamera.FieldOfView` is the same as before
    (70 by default).
-9. **BUG-13:** press RUN 10 times fast: from the 4th press the status says "Slow down a
-   moment ..."; it never says "Couldn't reach the server (Rejected)".
+9. **BUG-13:** press RUN about 8 times, each just after the 1.2 s cooldown (faster presses
+   are dropped silently): around the 6th the status says "Slow down a moment ..."; it never
+   says "Couldn't reach the server (Rejected)". Automated: `studio_smoke.py --checks runspam`.
 10. **BUG-17:** press Tab in the editor: exactly 4 spaces. Paste text containing tabs: each
     tab becomes 4 spaces.
 11. **BUG-18:** V-CONSOLE (letterbox, console FOV 55, reticle only while the terminal is

@@ -30,6 +30,7 @@ local Client = script.Parent.Parent
 local Components = require(Client.UI.Components)
 local Theme = require(Client.UI.Theme)
 local UIState = require(Client.UI.UIState)
+local ControlModeController = require(script.Parent.ControlModeController)
 
 local C = Theme.Colors
 local player = Players.LocalPlayer
@@ -260,6 +261,7 @@ function MainMenuController:Init()
 	)
 
 	playButton = menuButton("PLAY", C.Accent, 4, column)
+	playButton.Name = "PlayButton" -- addressed by path in tools/studio_smoke.py
 	local techButton = menuButton("TECH TREE", nil, 5, column)
 	local shopButton = menuButton("SHOP", nil, 6, column)
 	local helpButton = menuButton("HOW TO PLAY", nil, 7, column)
@@ -304,6 +306,8 @@ function MainMenuController:Init()
 	playButton.Activated:Connect(function()
 		if player:GetAttribute("DataLoaded") == true then
 			UIState.closeAll()
+			-- Straight to the field + terminal view: the game is the code and the grid.
+			ControlModeController:EnterSoon()
 		end
 	end)
 	techButton.Activated:Connect(function()

@@ -1,0 +1,49 @@
+# Every push to main and every pull request: the same checks CLAUDE.md asks for before a
+# gameplay / parser / economy change ships. Tools come from rokit.toml (pinned versions).
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rokit and the pinned tools
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl -sSf https://raw.githubusercontent.com/rojo-rbx/rokit/main/scripts/install.sh | bash
+          echo "$HOME/.rokit/bin" >> "$GITHUB_PATH"
+          export PATH="$HOME/.rokit/bin:$PATH"
+          rokit authenticate github --token "$GITHUB_TOKEN" || true
+          rokit install --no-trust-check
+
+      - name: Unit tests (Lune)
+        run: lune run tests/run
+
+      - name: Format (StyLua)
+        run: stylua --check src tests
+
+      - name: Lint (selene)
+        run: selene src
+
+      - name: Type check (luau-lsp)
+        run: |
+          mkdir -p build
+          # The definitions that match the pinned luau-lsp 1.70.1.
+          curl -sSfL -o build/globalTypes.None.d.luau \
+            https://raw.githubusercontent.com/JohnnyMorganz/luau-lsp/1.70.1/scripts/globalTypes.None.d.luau
+          rojo sourcemap default.project.json -o sourcemap.json
+          luau-lsp analyze --definitions=build/globalTypes.None.d.luau --sourcemap=sourcemap.json \
+            --flag:LuauSolverV2=false src
+
+      - name: Build the place (Rojo)
+        run: rojo build default.project.json -o build/DroneFarm.rbxlx

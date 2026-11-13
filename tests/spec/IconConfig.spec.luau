@@ -190,5 +190,19 @@ return function(T, Loader)
 		it("uses Roblox's built-in Robux icon", function()
 			expect(string.sub(IconConfig.ROBUX_IMAGE, 1, 11)).toBe("rbxasset://")
 		end)
+
+		-- The generated atlas module must load (a bare `function = 23` key once broke the whole
+		-- client) and put every key at its AtlasOrder position (0-based cells).
+		it("loads the generated IconAtlas and matches AtlasOrder", function()
+			local IconAtlas = Loader.get("ReplicatedStorage.Shared.Config.IconAtlas")
+			local position = {}
+			for index, key in IconConfig.AtlasOrder do
+				position[key] = index - 1
+			end
+			for key, cell in IconAtlas.cells do
+				expect(position[key]).toBe(cell)
+			end
+			expect(IconAtlas.cells["function"] ~= nil).toBe(true)
+		end)
 	end)
 end

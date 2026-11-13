@@ -78,6 +78,11 @@ local CONFIG = {
 	ReticleSize = 32, -- px, shown only while the terminal is collapsed
 	ReticleAlpha = 0.85, -- transparency: barely there
 	OthersRefresh = 1, -- seconds between re-collecting other players' character parts
+	-- PLAY drops you straight into the field + terminal view (EnterSoon): after the menu has
+	-- let go of the camera, and only within this window, so walking onto the plot later never
+	-- flies the camera by surprise.
+	AutoEnterDelay = 0.35,
+	AutoEnterWindow = 8,
 }
 local CHROME = Color3.fromHex("#0B0F15")
 local CONSOLE_EASE = TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
@@ -110,6 +115,8 @@ local ControlModeController = {}
 
 local state: State = "Exploring"
 local inZone = false -- the player's root part is inside their own plot's Zone
+local autoEnterAt: number? = nil -- EnterSoon: enter at/after this os.clock() ...
+local autoEnterUntil = 0 -- ... but not after this one
 local menuOpen = false -- the full-screen main menu is up (it covers everything)
 local ownPlot: Model? = nil
 local plotConnections: { RBXScriptConnection } = {}
@@ -582,6 +589,26 @@ local function bindRenderGuard()
 		end
 		-- The reticle only while the terminal is collapsed (and the camera has arrived).
 		reticle.Visible = state == "Controlling" and TerminalController:IsCollapsed()
+		-- Something else handed the camera back to the default scripts (seen with Studio's
+		-- screen capture; a plugin or core script could do the same): take it again, and once
+		-- we've arrived, put it back on the bird's-eye view the default scripts just moved.
+		local camera = Workspace.CurrentCamera
+		if
+			camera ~= nil
+			and (state == "Entering" or state == "Controlling")
+			and camera.CameraType ~= Enum.CameraType.Scriptable
+		then
+			camera.CameraType = Enum.CameraType.Scriptable
+			local plot = ownPlot
+			local goal = if plot ~= nil
+					and state == "Controlling"
+					and cameraTween == nil
+				then birdsEyeCFrame(plot)
+				else nil
+			if goal ~= nil then
+				camera.CFrame = goal
+			end
+		end
 	end)
 end
 
@@ -961,13 +988,23 @@ function ControlModeController:Start()
 		considerPlot(child)
 	end
 
-	-- The zone check: a cheap point-in-box test, ten times a second.
+	-- The zone check: a cheap point-in-box test, ten times a second. Also runs a pending
+	-- EnterSoon once the menu is gone and you stand on your plot.
 	local elapsed = 0
 	RunService.Heartbeat:Connect(function(dt: number)
 		elapsed += dt
 		if elapsed >= CONFIG.ZoneCheckInterval then
 			elapsed = 0
 			updateZone()
+			local at = autoEnterAt
+			if at ~= nil and os.clock() >= at then
+				if os.clock() > autoEnterUntil then
+					autoEnterAt = nil
+				elseif state == "Exploring" and not menuOpen and inZone and ownPlot ~= nil then
+					autoEnterAt = nil
+					enter()
+				end
+			end
 		end
 	end)
 	refreshUi(false)
@@ -976,6 +1013,17 @@ end
 -- True while the player is in (or flying into / out of) Control Mode.
 function ControlModeController:IsActive(): boolean
 	return state ~= "Exploring"
+end
+
+--[[
+	PLAY from the main menu: fly into Control Mode (field + terminal) as soon as the menu has
+	closed and you're on your own plot. Does nothing if that doesn't happen within
+	CONFIG.AutoEnterWindow seconds (spawned elsewhere, menu reopened, ...).
+]]
+function ControlModeController:EnterSoon()
+	local now = os.clock()
+	autoEnterAt = now + CONFIG.AutoEnterDelay
+	autoEnterUntil = now + CONFIG.AutoEnterWindow
 end
 
 -- Leave Control Mode from other code (`instant` = no tween).

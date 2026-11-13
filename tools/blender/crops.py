@@ -234,10 +234,13 @@ if __name__ == "__main__":
             obj.name = name
             set_origin(obj, (0, 0, 0))  # pivot = tile-top centre
             shade_flat(obj)
-            tris = report(name, [obj], BUDGET[crop][si])
-            fx, fz = footprint(obj)
-            print(f"   footprint {fx:.2f} x {fz:.2f} {'OK' if fx <= 5.2 and fz <= 5.2 else 'TOO WIDE'}  (one mesh, pivot tile top)")
-            export([obj], os.path.join(out, crop, stage))
+            meshes, found = finalize([obj], BUDGET[crop][si])
+            problems += [f"{name}: {p}" for p in found]
+            tris = report(name, meshes, BUDGET[crop][si])
+            lo, hi = game_bounds(meshes)
+            fx, fz = hi.x - lo.x, hi.z - lo.z
+            print(f"   footprint {fx:.2f} x {fz:.2f} {'OK' if fx <= 5.2 and fz <= 5.2 else 'TOO WIDE'}  ({len(meshes)} MeshParts, pivot tile top)")
+            export(meshes, os.path.join(out, crop, stage))
             if fx > 5.2 or fz > 5.2:
                 for part_name, (px, pz) in extents.items():
                     print(f"     part {part_name:10s} game x {px[0]:+.2f}..{px[1]:+.2f}  z {pz[0]:+.2f}..{pz[1]:+.2f}")

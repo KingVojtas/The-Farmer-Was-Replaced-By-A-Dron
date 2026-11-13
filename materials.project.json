@@ -1,0 +1,128 @@
+{
+	"name": "DroneFarmMaterials",
+	"tree": {
+		"$className": "MaterialService",
+		"SoilDry": {
+			"$className": "MaterialVariant",
+			"$properties": {
+				"BaseMaterial": "Ground",
+				"StudsPerTile": 8,
+				"MaterialPattern": "Organic",
+				"ColorMap": "rbxassetid://101405119859548",
+				"NormalMap": "rbxassetid://106554969934691",
+				"RoughnessMap": "rbxassetid://135305103518551"
+			}
+		},
+		"SoilTilled": {
+			"$className": "MaterialVariant",
+			"$properties": {
+				"BaseMaterial": "Ground",
+				"StudsPerTile": 6.4,
+				"MaterialPattern": "Regular",
+				"ColorMap": "rbxassetid://103639797838473",
+				"NormalMap": "rbxassetid://134287918036495",
+				"RoughnessMap": "rbxassetid://111094247359264"
+			}
+		},
+		"SoilWet": {
+			"$className": "MaterialVariant",
+			"$properties": {
+				"BaseMaterial": "Ground",
+				"StudsPerTile": 6.4,
+				"MaterialPattern": "Regular",
+				"ColorMap": "rbxassetid://83993604954453",
+				"NormalMap": "rbxassetid://116913705881391",
+				"RoughnessMap": "rbxassetid://101789303583945"
+			}
+		},
+		"SoilDug": {
+			"$className": "MaterialVariant",
+			"$properties": {
+				"BaseMaterial": "Ground",
+				"StudsPerTile": 4,
+				"MaterialPattern": "Organic",
+				"ColorMap": "rbxassetid://76092431982650",
+				"NormalMap": "rbxassetid://94461317659636",
+				"RoughnessMap": "rbxassetid://104780286969938"
+			}
+		},
+		"DroneHull": {
+			"$className": "MaterialVariant",
+			"$properties": {
+				"BaseMaterial": "Metal",
+				"StudsPerTile": 4,
+				"MaterialPattern": "Regular",
+				"ColorMap": "rbxassetid://96913859061856",
+				"NormalMap": "rbxassetid://83504791123404",
+				"RoughnessMap": "rbxassetid://126831334576439",
+				"MetalnessMap": "rbxassetid://100922419393312"
+			}
+		},
+		"CropLeaf": {
+			"$className": "MaterialVariant",
+			"$properties": {
+				"BaseMaterial": "Grass",
+				"StudsPerTile": 2,
+				"MaterialPattern": "Organic",
+				"ColorMap": "rbxassetid://78497921035866",
+				"NormalMap": "rbxassetid://101184850106617",
+				"RoughnessMap": "rbxassetid://116828246089054"
+			}
+		},
+		"CropSkin": {
+			"$className": "MaterialVariant",
+			"$properties": {
+				"BaseMaterial": "Plastic",
+				"StudsPerTile": 2,
+				"MaterialPattern": "Organic",
+				"ColorMap": "rbxassetid://136134375541713",
+				"NormalMap": "rbxassetid://97650403933501",
+				"RoughnessMap": "rbxassetid://88517848224845"
+			}
+		},
+		"Bark": {
+			"$className": "MaterialVariant",
+			"$properties": {
+				"BaseMaterial": "Wood",
+				"StudsPerTile": 4,
+				"MaterialPattern": "Regular",
+				"ColorMap": "rbxassetid://134386270415084",
+				"NormalMap": "rbxassetid://121369779904558",
+				"RoughnessMap": "rbxassetid://78364251392839"
+			}
+		},
+		"Planks": {
+			"$className": "MaterialVariant",
+			"$properties": {
+				"BaseMaterial": "WoodPlanks",
+				"StudsPerTile": 6,
+				"MaterialPattern": "Regular",
+				"ColorMap": "rbxassetid://102406663034755",
+				"NormalMap": "rbxassetid://128839423233288",
+				"RoughnessMap": "rbxassetid://124222534663378"
+			}
+		},
+		"Shingles": {
+			"$className": "MaterialVariant",
+			"$properties": {
+				"BaseMaterial": "Slate",
+				"StudsPerTile": 6,
+				"MaterialPattern": "Regular",
+				"ColorMap": "rbxassetid://93539264781284",
+				"NormalMap": "rbxassetid://112409474362934",
+				"RoughnessMap": "rbxassetid://110918049594956"
+			}
+		},
+		"Stone": {
+			"$className": "MaterialVariant",
+			"$properties": {
+				"BaseMaterial": "Cobblestone",
+				"StudsPerTile": 8,
+				"MaterialPattern": "Organic",
+				"ColorMap": "rbxassetid://137568651215467",
+				"NormalMap": "rbxassetid://112526316998032",
+				"RoughnessMap": "rbxassetid://89381253465984"
+			}
+		}
+	}
+}

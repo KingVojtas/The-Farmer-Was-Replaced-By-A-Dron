@@ -201,6 +201,10 @@ PlayerData {
 
 * **The field size isn't stored**; it's derived from Grid Expansion research
   (`Tech.stats().gridSize`) and applied live by `GridService:Resize`.
+* **Where a plot stands:** `GridService.plotCenter(index)` reads `GameConfig.Grid.PlotSlots`
+  (a 5 x 5 grid round the spawn village; slots 1-8 ring the village and fill first). Everything
+  on a plot is relative to its centre, so moving the slots never touches saves. The map
+  (`map/Map.rbxm`) keeps exactly these 24 slots free, so **a server needs MaxPlayers <= 24**.
 * **The field's tiles are** (v3, `Progression/FieldSave`): `DataService:OnBeforeSave` lets
   GridService write a fresh snapshot right before every autosave, leave and shutdown, and
   `createPlot` restores it. `Progression/FieldKeeper` also snapshots when the plot is removed,
@@ -263,7 +267,14 @@ selene src                               # lint
 rojo sourcemap default.project.json -o sourcemap.json
 luau-lsp analyze --definitions=build/globalTypes.None.d.luau --sourcemap=sourcemap.json --flag:LuauSolverV2=false src
 rojo build default.project.json -o build/DroneFarm.rbxlx
+python tools/studio_smoke.py --checks all   # plays the game in Studio over its built-in MCP server
 ```
+
+The first six run in CI on every push to main and every PR (`.github/workflows/ci.yml`). The
+Studio smoke test needs Roblox Studio with Assistant > ... > Manage MCP Servers > "Enable Studio
+as MCP server" on. It checks that the farm is above ground, that PLAY goes straight into Control
+Mode, that the starter script hops the drone and banks Hay, a few BUGS.md items, and that
+Output has no errors (`tools/studio_mcp.py` is the reusable client).
 
 ### Studio playtest checklist (needs a real Studio session)
 

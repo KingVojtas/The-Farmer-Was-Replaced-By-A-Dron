@@ -134,6 +134,23 @@ def furrow_field(seed):
     return f, h, n
 
 
+def pebbles(colors, height, seed, count, tone=(150, 138, 120)):
+    """Small round stones pressed into the soil (lighter, raised): a closer look has detail."""
+    rng = random.Random(seed)
+    for _ in range(count):
+        cx, cy = rng.randrange(SOIL), rng.randrange(SOIL)
+        r = rng.uniform(2.0, 4.6)
+        k = rng.uniform(0.82, 1.12)
+        stone = tuple(min(255, int(v * k)) for v in tone)
+        for dy in range(-5, 6):
+            for dx in range(-5, 6):
+                d = (dx * dx + dy * dy) / (r * r)
+                if d <= 1:
+                    i = ((cy + dy) % SOIL) * SOIL + (cx + dx) % SOIL
+                    colors[i] = lerp(colors[i], stone, 0.85 - d * 0.25)
+                    height[i] = max(height[i], 0.7 + 0.3 * (1 - d))
+
+
 def soil_dry(folder):
     h = fbm(SOIL, 8, 5, 11)
     cracks = fbm(SOIL, 5, 3, 23)
@@ -149,6 +166,7 @@ def soil_dry(folder):
         colors.append(c)
         rough.append(0.93 + (v - 0.5) * 0.04)
         height.append(v * 0.6 - (0.35 if crack else 0.0))
+    pebbles(colors, height, 15, 70)
     save_set(folder, "SoilDry", SOIL, colors, rough, [0.0] * len(h), height, 6.0)
 
 
@@ -162,6 +180,8 @@ def soil_tilled(folder):
             c = lerp(c, CRUMB, 0.8)
         colors.append(c)
         rough.append(0.79 + (n[i] - 0.5) * 0.04)
+    h = list(h)
+    pebbles(colors, h, 35, 40)
     save_set(folder, "SoilTilled", SOIL, colors, rough, [0.0] * len(h), h, 9.0)
 
 
@@ -195,6 +215,7 @@ def soil_dug(folder):
         colors.append(c)
         rough.append(0.95)
         height.append(clod * 0.6 + v * 0.4)
+    pebbles(colors, height, 55, 90)
     save_set(folder, "SoilDug", SOIL, colors, rough, [0.0] * len(clods), height, 12.0)
 
 
@@ -275,8 +296,216 @@ def crops(folder):
     print(f"  Crops: {size}x{size} palette atlas, {len(CROP_SWATCHES)} rows of 64 px swatches")
 
 
+# ---------------------------------------------------------------- detail MaterialVariants
+# Light, NEUTRAL tileable sets: Roblox multiplies a MaterialVariant's ColorMap by the part's
+# Color (measured in Studio, 2026-11-13), so the hue stays the part's (the drone's paint slots,
+# the crop colours, the barn red) and the texture adds only light / shadow / relief.
+
+DETAIL = 512
+
+
+def gray(v):
+    g = max(0, min(255, int(v * 255 + 0.5)))
+    return (g, g, g)
+
+
+def detail_set(folder, name, colors, rough, height, strength, metal=None):
+    save_set(folder, name, DETAIL, colors, rough, metal or [0.0] * len(colors), height, strength)
+
+
+def drone_hull(folder):
+    """Hull panels: a 4 x 4 panel grid with recessed seams, corner rivets, soft grime."""
+    grime = fbm(DETAIL, 6, 4, 301)
+    fine = tile_noise(DETAIL, 64, 303)
+    panel = DETAIL // 4
+    colors, rough, metal, height = [], [], [], []
+    for y in range(DETAIL):
+        py = y % panel
+        for x in range(DETAIL):
+            px = x % panel
+            i = y * DETAIL + x
+            seam = px < 3 or py < 3
+            rivet = False
+            for cx, cy in ((12, 12), (panel - 12, 12), (12, panel - 12), (panel - 12, panel - 12)):
+                if (px - cx) ** 2 + (py - cy) ** 2 <= 9:
+                    rivet = True
+            v = 0.9 + (grime[i] - 0.5) * 0.14 + (fine[i] - 0.5) * 0.04
+            if seam:
+                v = 0.42
+            elif rivet:
+                v = 1.0
+            colors.append(gray(v))
+            rough.append(0.6 if seam else 0.34 + grime[i] * 0.16)
+            metal.append(0.0 if seam else 0.55)
+            height.append(0.0 if seam else (0.85 if rivet else 0.5 + (fine[i] - 0.5) * 0.03))
+    detail_set(folder, "DroneHull", colors, rough, height, 10.0, metal)
+
+
+def crop_leaf(folder):
+    """Leaf: a main vein every 128 px, fine side veins on the diagonal, soft blotches."""
+    blotch = fbm(DETAIL, 5, 4, 311)
+    wob = tile_noise(DETAIL, 8, 313)
+    colors, rough, height = [], [], []
+    for y in range(DETAIL):
+        for x in range(DETAIL):
+            i = y * DETAIL + x
+            main = abs(((y + (wob[i] - 0.5) * 10) % 128) - 64) < 2.2
+            side_phase = ((x + (y % 128 if (y % 128) < 64 else 128 - y % 128)) % 32)
+            side = side_phase < 1.6
+            v = 0.86 + (blotch[i] - 0.5) * 0.16
+            h = 0.5 + (blotch[i] - 0.5) * 0.1
+            if side:
+                v, h = v + 0.06, h + 0.12
+            if main:
+                v, h = 1.0, 0.85
+            colors.append(gray(v))
+            rough.append(0.62 + (blotch[i] - 0.5) * 0.1)
+            height.append(h)
+    detail_set(folder, "CropLeaf", colors, rough, height, 5.0)
+
+
+def crop_skin(folder):
+    """Fruit skin: smooth, faint mottling, tiny pores, the odd soft highlight streak."""
+    mottle = fbm(DETAIL, 6, 4, 321)
+    pores = tile_noise(DETAIL, 128, 323)
+    streak = tile_noise(DETAIL, 4, 325, cells_y=32)
+    colors, rough, height = [], [], []
+    for i in range(DETAIL * DETAIL):
+        pore = pores[i] > 0.86
+        v = 0.9 + (mottle[i] - 0.5) * 0.12 + (streak[i] - 0.5) * 0.05
+        if pore:
+            v -= 0.12
+        colors.append(gray(v))
+        rough.append(0.42 + (mottle[i] - 0.5) * 0.12)
+        height.append(0.5 - (0.12 if pore else 0.0) + (mottle[i] - 0.5) * 0.05)
+    detail_set(folder, "CropSkin", colors, rough, height, 4.0)
+
+
+def bark(folder):
+    """Bark: deep vertical grooves that wander, cross cracks, rough everywhere."""
+    wander = tile_noise(DETAIL, 6, 331, cells_y=3)
+    cracks = fbm(DETAIL, 8, 3, 333)
+    grain = tile_noise(DETAIL, 96, 335)
+    colors, rough, height = [], [], []
+    for y in range(DETAIL):
+        for x in range(DETAIL):
+            i = y * DETAIL + x
+            phase = 2 * math.pi * (x / 48 + (wander[i] - 0.5) * 0.8)
+            ridge = 0.5 + 0.5 * math.cos(phase)
+            crack = abs(cracks[i] - 0.5) < 0.02
+            h = ridge * 0.8 + grain[i] * 0.2 - (0.4 if crack else 0.0)
+            v = 0.55 + ridge * 0.4 + (grain[i] - 0.5) * 0.08 - (0.2 if crack else 0.0)
+            colors.append(gray(v))
+            rough.append(0.88)
+            height.append(max(0.0, h))
+    detail_set(folder, "Bark", colors, rough, height, 9.0)
+
+
+def planks(folder):
+    """Boards: 8 rows of 64 px, staggered butt joints, grain along x, a few knots."""
+    grain = tile_noise(DETAIL, 4, 341, cells_y=96)
+    rng = random.Random(343)
+    rows = 8
+    row_h = DETAIL // rows
+    shade = [rng.uniform(0.84, 1.0) for _ in range(rows * 2)]
+    joints = [rng.randrange(0, DETAIL) for _ in range(rows)]
+    knots = [(rng.randrange(DETAIL), rng.randrange(DETAIL), rng.uniform(5, 9)) for _ in range(9)]
+    colors, rough, height = [], [], []
+    for y in range(DETAIL):
+        row = y // row_h
+        ly = y % row_h
+        for x in range(DETAIL):
+            i = y * DETAIL + x
+            side = 0 if (x - joints[row]) % DETAIL < DETAIL // 2 else 1
+            seam = ly < 2 or (x - joints[row]) % (DETAIL // 2) < 2
+            v = shade[row * 2 + side] * (0.9 + (grain[i] - 0.5) * 0.2)
+            h = 0.6 + (grain[i] - 0.5) * 0.12
+            for kx, ky, kr in knots:
+                dx = min(abs(x - kx), DETAIL - abs(x - kx))
+                dy = min(abs(y - ky), DETAIL - abs(y - ky))
+                d = (dx * dx) / (kr * kr * 2.2) + (dy * dy) / (kr * kr)
+                if d < 1:
+                    v *= 0.7 + 0.3 * d
+                    h -= 0.1 * (1 - d)
+            if seam:
+                v, h = 0.4, 0.0
+            colors.append(gray(v))
+            rough.append(0.78 if not seam else 0.9)
+            height.append(h)
+    detail_set(folder, "Planks", colors, rough, height, 8.0)
+
+
+def shingles(folder):
+    """Roof shingles: staggered rows, each tile darker toward its lower edge, gaps between."""
+    rng = random.Random(351)
+    rows, width = 8, 64
+    row_h = DETAIL // rows
+    shade = {(r, c): rng.uniform(0.82, 1.0) for r in range(rows) for c in range(DETAIL // width + 1)}
+    grit = tile_noise(DETAIL, 96, 353)
+    colors, rough, height = [], [], []
+    for y in range(DETAIL):
+        row = y // row_h
+        ly = y % row_h
+        offset = (width // 2) if row % 2 else 0
+        for x in range(DETAIL):
+            i = y * DETAIL + x
+            col = ((x + offset) % DETAIL) // width
+            lx = (x + offset) % width
+            gap = lx < 2
+            t = ly / row_h  # 0 at the top of the tile, 1 at its bottom edge
+            v = shade[(row, col)] * (1.0 - 0.28 * t * t) + (grit[i] - 0.5) * 0.06
+            h = 0.25 + 0.7 * t
+            if gap or ly < 2:
+                v, h = 0.38, 0.0
+            colors.append(gray(v))
+            rough.append(0.82)
+            height.append(h)
+    detail_set(folder, "Shingles", colors, rough, height, 7.0)
+
+
+def stone(folder):
+    """Stone wall / paving: irregular blocks (wrapped Voronoi) in darker mortar."""
+    rng = random.Random(361)
+    cells = 6
+    step = DETAIL / cells
+    seeds = {(cx, cy): ((cx + rng.uniform(0.15, 0.85)) * step, (cy + rng.uniform(0.15, 0.85)) * step, rng.uniform(0.8, 1.0))
+             for cx in range(cells) for cy in range(cells)}
+    detail = fbm(DETAIL, 8, 4, 363)
+    colors, rough, height = [], [], []
+    for y in range(DETAIL):
+        gy = int(y // step)
+        for x in range(DETAIL):
+            gx = int(x // step)
+            d1 = d2 = 1e9
+            tone = 1.0
+            for ox in (-1, 0, 1):
+                for oy in (-1, 0, 1):
+                    sx, sy, st = seeds[((gx + ox) % cells, (gy + oy) % cells)]
+                    sx += (gx + ox - (gx + ox) % cells) * step
+                    sy += (gy + oy - (gy + oy) % cells) * step
+                    d = (x - sx) ** 2 + (y - sy) ** 2
+                    if d < d1:
+                        d1, d2, tone = d, d1, st
+                    elif d < d2:
+                        d2 = d
+            edge = math.sqrt(d2) - math.sqrt(d1)
+            i = y * DETAIL + x
+            mortar = edge < 5
+            v = tone * (0.86 + (detail[i] - 0.5) * 0.18)
+            h = min(1.0, 0.4 + edge / 40) + (detail[i] - 0.5) * 0.1
+            if mortar:
+                v, h = 0.5, 0.0
+            colors.append(gray(v))
+            rough.append(0.9 if mortar else 0.82)
+            height.append(h)
+    detail_set(folder, "Stone", colors, rough, height, 9.0)
+
+
+DETAIL_SETS = (drone_hull, crop_leaf, crop_skin, bark, planks, shingles, stone)
+
 FAMILIES = {
     "soil": lambda: [fn(os.path.join(OUT, "soil")) for fn in (soil_dry, soil_tilled, soil_wet, soil_dug)],
+    "detail": lambda: [fn(os.path.join(OUT, "detail")) for fn in DETAIL_SETS],
     "hardsurface": lambda: hardsurface(os.path.join(OUT, "hardsurface")),
     "crops": lambda: crops(os.path.join(OUT, "crops")),
 }

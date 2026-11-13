@@ -41,7 +41,7 @@ def ground(size, center):
     plane.data.materials.append(material("M_PreviewGround", "#4E6B3A", 0.9))
 
 
-def render(path, target, distance, width=1600, height=1000, ortho=None):
+def render(path, target, distance, width=1600, height=1000, ortho=None, pitch=60, front=False):
     scene = bpy.context.scene
     scene.render.engine = "BLENDER_WORKBENCH"
     shading = scene.display.shading
@@ -63,9 +63,11 @@ def render(path, target, distance, width=1600, height=1000, ortho=None):
     cam = bpy.data.objects.new("PreviewCam", cam_data)
     scene.collection.objects.link(cam)
     # ~60 degrees down, from the camera side (+Z in game = -Y... game z maps to Blender y)
-    pitch = math.radians(60)
+    # front=True looks from game -Z instead (model fronts face -Z)
+    pitch = math.radians(pitch)
     tx, ty, tz = target
-    cam.location = g(tx, ty + distance * math.sin(pitch), tz + distance * math.cos(pitch))
+    side = -1 if front else 1
+    cam.location = g(tx, ty + distance * math.sin(pitch), tz + side * distance * math.cos(pitch))
     direction = g(tx, ty, tz) - cam.location
     cam.rotation_euler = direction.to_track_quat("-Z", "Y").to_euler()
     scene.camera = cam
@@ -74,10 +76,13 @@ def render(path, target, distance, width=1600, height=1000, ortho=None):
     print(f"  wrote {path}")
 
 
-def sheet(name, out, build, target, distance, width=1600, height=1000, ortho=None):
+def sheet(name, out, build, target, distance, width=1600, height=1000, ortho=None, **view):
+    a = args_after_dashes()
+    if "--sheets" in a and name not in a[a.index("--sheets") + 1].split(","):
+        return
     reset_scene()
     build()
-    render(os.path.join(out, "previews", name + ".png"), target, distance, width, height, ortho)
+    render(os.path.join(out, "previews", name + ".png"), target, distance, width, height, ortho, **view)
 
 
 if __name__ == "__main__":
@@ -107,6 +112,34 @@ if __name__ == "__main__":
         for i, path in enumerate(sorted(glob.glob(os.path.join(out, "Hats", "*.glb")))):
             import_glb(path, (i * 3.2, 0, 0))
 
+    def kit():
+        ground(40, (8, -0.02, 0))
+        for i, (rel, x) in enumerate((("Tiles/Soil", 0), ("Dressing/FencePost", 5), ("Dressing/FenceRail", 7),
+                                      ("Dressing/Walkway", 12), ("Dressing/SignPost", 19))):
+            path = os.path.join(out, *rel.split("/")) + ".glb"
+            if os.path.isfile(path):
+                import_glb(path, (x, 0.3 if rel == "Tiles/Soil" else 0, 0))
+
+    def props_row(names, spacing):
+        def build():
+            ground(spacing * len(names) + 10, (spacing * (len(names) - 1) / 2, -0.02, 0))
+            for i, name in enumerate(names):
+                path = os.path.join(out, "Map", name + ".glb")
+                if os.path.isfile(path):
+                    import_glb(path, (i * spacing, 0, 0))
+        return build
+
+    nature = ["oak", "pine", "birch", "bush", "berry_bush", "rock_small", "rock_medium", "rock_large",
+              "flowers_yellow", "flowers_pink", "flowers_white", "grass_tuft", "log", "mushroom"]
+    farm = ["hay_bale", "crate", "barrel", "cart", "scarecrow", "well", "lamp_post", "bench", "hedge", "welcome_sign"]
+    sheet("kit", out, kit, (9, 1, 0), 60, 1800, 700, ortho=26)
+    sheet("nature", out, props_row(nature, 6.5), (6.5 * 6.5, 2, 0), 150, 2200, 600, ortho=96)
+    sheet("farm", out, props_row(farm, 7.5), (7.5 * 4.5, 1.5, 0), 120, 2200, 600, ortho=78)
+    big = ["farmhouse", "barn", "silo", "greenhouse", "chicken_coop", "water_tower"]
+    small = ["tool_shed", "market_stall", "tractor", "fence_segment", "garden_bed", "haystack"]
+    sheet("buildings", out, props_row(big, 22), (55, 5, 0), 250, 2200, 800, ortho=135, pitch=30, front=True)
+    sheet("yard", out, props_row(small, 8), (20, 1.5, 0), 120, 2200, 700, ortho=50, pitch=30, front=True)
+    sheet("landmarks", out, props_row(["windmill", "plaza", "pond", "path"], 30), (45, 3, 0), 200, 2000, 800, ortho=125)
     sheet("drone", out, drone, (0, 0, 0), 30, 1400, 1000, ortho=7.5)
     sheet("crops", out, crops, (6.4, 1, 0), 120, 1000, 1500, ortho=44)
     sheet("stations", out, stations, (3.2, 1, 0), 60, 1600, 1000, ortho=15)

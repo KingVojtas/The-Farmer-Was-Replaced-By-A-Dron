@@ -69,10 +69,10 @@ def build_charger(col):
 
 def build_factory(col):
     m_hull = material("M_FactoryHull", HULL, 0.5, 0.8)
-    m_roof = material("M_Roof", ROOF, 0.5, 0.9)
+    m_roof = material("M_Roof", ROOF, 0.5, 0.9, variant="DroneHull")
     m_steel = material("M_Steel", STEEL, 0.35, 1.0)
     m_copper = material("M_Copper", COPPER, 0.3, 1.0)
-    m_hopper = material("M_Hopper", HOPPER, 0.6)
+    m_hopper = material("M_Hopper", HOPPER, 0.6, variant="DroneHull")
     m_wood = material("M_Wood", WOOD, 0.8)
     m_glass = material("M_Glass", GLASS, 0.05, alpha=0.55)
     m_slit = material("M_SlitIdle", SLIT_IDLE, 0.4)
@@ -118,17 +118,29 @@ def build_factory(col):
 
 if __name__ == "__main__":
     out = parse_out(os.path.join(os.path.dirname(os.path.abspath(__file__)), "out", "Stations"))
-    for name, builder, budget in (("charger", build_charger, 1500), ("factory", build_factory, 4000)):
+    problems = []
+    # The game pivots a station model on the TOP face of its server block (PlotRenderer
+    # `asset:PivotTo(top)`): the charger pad is 0.4 tall, the factory block 3 (its housing wraps it).
+    for name, builder, budget, sink in (
+        ("charger", build_charger, 1500, 0.6),
+        ("factory", build_factory, 4000, 3.0),
+    ):
         scene = reset_scene()
         col = bpy.data.collections.new(f"{name}_export")
         scene.collection.children.link(col)
         parts = builder(col)
         for p in parts:
             shade_flat(p)
-        report(name, parts, budget)
+        parts, found = finalize(parts, budget, sink_limit=sink)
+        problems += [f"{name}: {p}" for p in found]
+        if report(name, parts, budget) > budget:
+            problems.append(f"{name}: over {budget} tris")
         # World heights (parts keep their own centre as origin, so local z isn't height).
         zs = [max(((p.matrix_world @ v.co).z for v in p.data.vertices), default=0) for p in parts]
         print(f"   max height above pivot: {max(zs):.2f} studs ({'<= 2.5 pad / 3.5 pylon' if name == 'charger' else '<= 6'})")
         export(parts, os.path.join(out, name))
     print("\nStudio import: ART_BIBLE §5.6 -> ReplicatedStorage.Assets.Stations.charger / factory. Set WorldPivot = top-face centre.")
     print("Runtime Neon (do NOT bake): Ring1..4 + PylonLight cyan while charging; Slit #4DFFB0 + Lamp amber while working.")
+    if problems:
+        print("\nPROBLEMS:\n  " + "\n  ".join(problems))
+        sys.exit(1)

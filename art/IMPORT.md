@@ -16,6 +16,16 @@ Nothing here changes gameplay. Look rules: `docs/ART_BIBLE.md`; contract: `asset
 | PBR textures | `python tools/build_textures.py` | `art/textures/{soil,hardsurface,crops}/` (already in the repo) |
 | Icon atlas | `python tools/build_icon_atlas.py` | `art/IconAtlas.png` + `IconAtlas.luau` |
 
+**Finalize pass (2026-11-12, `_common.finalize`):** every script now runs the Roblox technical-art
+rules before export: merge by distance + outward normals, a **Decimate** (Collapse) modifier at
+`min(1, budget / tris)` (a no-op under budget, so hard edges stay crisp), ≤ 10,000 tris per
+mesh, **Smart UV Project** (66°, margin 0.02), shade flat, Apply Rotation + Scale, and a pivot
+check: crops / stations / hats stand on y = 0 (the halo floats on purpose; the factory reaches
+3 studs down because the game pivots it on the top of its 3-stud server block), the drone's body
+centre is the origin. Parts keep ONE flat material each (the game tints state parts and paint
+slots at runtime, which a baked texture would override). A failed check exits with code 1.
+Rebuilt on 2026-11-12 with Blender 4.5.16 LTS (portable, `%LOCALAPPDATA%\Programs\Blender\`).
+
 **Built on 2026-11-11 with Blender 4.5.16 LTS:** every model is in `tools/blender/out/`
 (git-ignored, rebuild with the commands above). All within budget: drone 780 tris / 11
 parts, crops 36–264 tris each (one mesh, footprint ≤ 5.2), charger 896, factory 530, hats
@@ -33,8 +43,14 @@ scattered leaves and petals). The charger coils stood up as an arch across the l
 **Without Studio (Open Cloud):** set `ROBLOX_API_KEY` (Assets API Read + Write, Legacy Asset
 Manage) and `ROBLOX_CREATOR_ID`, then `python tools/roblox_upload.py models`. It uploads every
 FBX as a Model, downloads each as `assets/<path>.rbxm` and records the ids in
-`art/roblox_uploads.json`. **[verify]** Open Cloud imports with default settings, not the ones
-below: check scale (Drone ≈ the procedural one), pivots and part names before relying on it.
+`art/roblox_uploads.json`. What Open Cloud does to an FBX (measured 2026-11-13): scale and part
+names stay, but every part comes back grey, the model is turned 180° about Y, and it is wrapped as
+a package. `tools/apply_parts.luau` (run automatically after each download) puts back colour,
+material, transparency and PaintSlot from the Blender part sheet (`<path>.parts.json`, written
+by `_common.export`), turns the parts back, sets the pivot on the scene origin and removes the
+PackageLink. A model it can't match to its sheet is deleted rather than synced. Multi-material
+meshes are split into one MeshPart per material (`_common.split_materials`), because a MeshPart
+has one Color.
 
 **3D Importer settings (every model):** File → Import 3D. *File Dimensions* = **Studs**, *Rig
 General* = **off** (no rig, no animation), *Anchor* = on, *Insert using scene position* = off,

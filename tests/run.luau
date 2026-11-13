@@ -39,6 +39,7 @@ local specs = {
 	require("./spec/UiSlices.spec"),
 	require("./spec/SoundConfig.spec"),
 	require("./spec/Project.spec"),
+	require("./spec/MapLayout.spec"),
 }
 
 for _, register in specs do

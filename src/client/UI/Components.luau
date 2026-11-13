@@ -152,19 +152,33 @@ function Components.costChip(currencyId: string, amount: number, affordable: boo
 	return chip
 end
 
+-- BUG-25: release goes back to 1.04 only while the pointer is still over the button, and a
+-- lifted finger (touch sends no MouseLeave) always settles it back to 1.
 function Components.hover(button: GuiButton)
 	local scale: UIScale = Theme.create("UIScale", { Scale = 1, Parent = button })
+	local hovered = false
+	local function to(value: number)
+		Theme.tween(scale, { Scale = value }, Theme.Motion.Fast)
+	end
 	button.MouseEnter:Connect(function()
-		Theme.tween(scale, { Scale = 1.04 }, Theme.Motion.Fast)
+		hovered = true
+		to(1.04)
 	end)
 	button.MouseLeave:Connect(function()
-		Theme.tween(scale, { Scale = 1 }, Theme.Motion.Fast)
+		hovered = false
+		to(1)
 	end)
 	button.MouseButton1Down:Connect(function()
-		Theme.tween(scale, { Scale = 0.97 }, Theme.Motion.Fast)
+		to(0.97)
 	end)
 	button.MouseButton1Up:Connect(function()
-		Theme.tween(scale, { Scale = 1.04 }, Theme.Motion.Fast)
+		to(if hovered then 1.04 else 1)
+	end)
+	button.InputEnded:Connect(function(input: InputObject)
+		if input.UserInputType == Enum.UserInputType.Touch then
+			hovered = false
+			to(1)
+		end
 	end)
 end
 

@@ -226,10 +226,44 @@ function Theme.skin(object: GuiObject, name: string)
 			skin.Position = UDim2.fromOffset(-left, -top)
 			skin.Size = UDim2.new(1, left + right, 1, top + bottom)
 		end
+		-- BUG-24: the flat background is gone, so AutoButtonColor has nothing to darken. Buttons
+		-- darken their Skin instead (hover 0.9, press 0.78), only while AutoButtonColor is on.
+		local hovered, pressed = false, false
+		local function paint()
+			local base = if slice.tint then object.BackgroundColor3 else Color3.new(1, 1, 1)
+			local button = object:IsA("GuiButton") and (object :: GuiButton).AutoButtonColor
+			local f = if not button then 1 elseif pressed then 0.78 elseif hovered then 0.9 else 1
+			skin.ImageColor3 = Color3.new(base.R * f, base.G * f, base.B * f)
+		end
 		if slice.tint then
-			object:GetPropertyChangedSignal("BackgroundColor3"):Connect(function()
-				skin.ImageColor3 = object.BackgroundColor3
+			object:GetPropertyChangedSignal("BackgroundColor3"):Connect(paint)
+		end
+		if object:IsA("GuiButton") then
+			local button = object :: GuiButton
+			button.MouseEnter:Connect(function()
+				hovered = true
+				paint()
 			end)
+			button.MouseLeave:Connect(function()
+				hovered, pressed = false, false
+				paint()
+			end)
+			button.MouseButton1Down:Connect(function()
+				pressed = true
+				paint()
+			end)
+			button.MouseButton1Up:Connect(function()
+				pressed = false
+				paint()
+			end)
+			-- Touch never sends MouseLeave: a lifted finger ends the hover too.
+			button.InputEnded:Connect(function(input: InputObject)
+				if input.UserInputType == Enum.UserInputType.Touch then
+					hovered, pressed = false, false
+					paint()
+				end
+			end)
+			button:GetPropertyChangedSignal("AutoButtonColor"):Connect(paint)
 		end
 		skin.Parent = object
 		object.BackgroundTransparency = 1

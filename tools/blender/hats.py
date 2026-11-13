@@ -32,7 +32,7 @@ HALO_GOLD = "#FFEC8C"
 
 
 def build_antenna(col):
-    pole = cylinder("HatPole", (0.6, 0.6, 0.6), 0.05, 1.2, material("M_Pole", POLE, 0.4, 1.0), col, sides=6)
+    pole = cylinder("HatPole", (0.6, 0.6, 0.6), 0.05, 1.2, material("M_Pole", POLE, 0.4, 1.0, variant="DroneHull"), col, sides=6)
     set_origin(pole, (0.6, 0.0, 0.6))
     tip = sphere("HatTip", (0.6, 1.25, 0.6), 0.15, material("M_AntennaTip", ANTENNA_RED, 0.35), col, segments=10, rings=6)
     return [pole, tip]
@@ -110,11 +110,15 @@ if __name__ == "__main__":
         parts = builder(col)
         for p in parts:
             shade_flat(p)
+        # Pivot = where the hat sits on the drone's back; the halo hovers above it on purpose.
+        modelled = len(parts)  # the ≤ 2 budget counts modelled parts; colour splits come after
+        parts, found = finalize(parts, 300, allow_float=(name == "halo"))
+        problems += [f"{name}: {p}" for p in found]
         tris = report(f"hat {name}", parts, 300)
         if tris > 300:
             problems.append(f"{name}: {tris} tris > 300")
-        if len(parts) > 2:
-            problems.append(f"{name}: {len(parts)} parts > 2")
+        if modelled > 2:
+            problems.append(f"{name}: {modelled} parts > 2")
         export(parts, os.path.join(out, name))
     print("\nStudio import: ART_BIBLE §5.6 -> ReplicatedStorage.Assets.Hats.<style> (a Model).")
     print("Set the Model's WorldPivot to the hat's base centre (game 0,0,0 here). 'Rotor*' parts spin.")

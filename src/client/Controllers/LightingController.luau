@@ -162,6 +162,11 @@ local HILL_COLOR = hex("#6E8A66")
 local HILL_COUNT = 14
 
 local function buildBackdrop()
+	-- The low-poly map (Workspace.Map, tools/build_map.luau) brings its own ring of hills.
+	local map = Workspace:FindFirstChild("Map")
+	if map ~= nil and map:FindFirstChild("Backdrop") ~= nil then
+		return
+	end
 	local folder = Instance.new("Folder")
 	folder.Name = "Backdrop"
 	local rows = math.max(1, math.ceil(Players.MaxPlayers / GRID.PlotsPerRow))

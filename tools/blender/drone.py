@@ -108,7 +108,16 @@ def checks(parts):
 if __name__ == "__main__":
     out = parse_out(os.path.join(os.path.dirname(os.path.abspath(__file__)), "out", "Drone.fbx"))
     parts, mount = build()
-    report("Drone", parts, 1900)
+    body = next(p for p in parts if p.name == "Body")
+    parts, problems = finalize(parts, 1900, pivot="center", center_part=body)  # pivot = body centre (contract)
+    if len(parts) > 16:
+        problems.append(f"{len(parts)} MeshParts > 16 (ART_BIBLE §4.1)")
+    tris = report("Drone", parts, 1900)
     checks(parts)
     export(parts + [mount], os.path.splitext(out)[0])
+    if tris > 1900:
+        problems.append(f"{tris} tris > 1900")
+    if problems:
+        print("\nPROBLEMS:\n  " + "\n  ".join(problems))
+        sys.exit(1)
     print("\nStudio import: ART_BIBLE §5.6 -> ReplicatedStorage.Assets.Drone (or assets/Drone.rbxm). Eye: Material Neon, no SurfaceAppearance.")

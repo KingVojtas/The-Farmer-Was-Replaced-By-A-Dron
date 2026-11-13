@@ -174,6 +174,11 @@ function AssetLibrary.station(kind: string): Model?
 	return cloneModel({ "Stations", kind })
 end
 
+-- A plot dressing piece (Assets.Dressing.FencePost / FenceRail / Walkway / SignPost), or nil.
+function AssetLibrary.dressing(name: string): Model?
+	return cloneModel({ "Dressing", name })
+end
+
 -- True when an artist station model exists (no clone is made).
 function AssetLibrary.hasStation(kind: string): boolean
 	local found = find({ "Stations", kind })

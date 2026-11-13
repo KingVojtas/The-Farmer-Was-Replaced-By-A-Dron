@@ -50,7 +50,7 @@ SoundConfig.Groups = {
 
 SoundConfig.List = {
 	hop = {
-		assetId = 0,
+		assetId = 133437677566894,
 		volume = 0.3,
 		group = "SFX",
 		pitchJitter = 0.08,
@@ -58,7 +58,7 @@ SoundConfig.List = {
 		looped = false,
 	},
 	land = {
-		assetId = 0,
+		assetId = 89064459348248,
 		volume = 0.45,
 		group = "SFX",
 		pitchJitter = 0.04,
@@ -66,7 +66,7 @@ SoundConfig.List = {
 		looped = false,
 	},
 	plant = {
-		assetId = 0,
+		assetId = 136375164993905,
 		volume = 0.5,
 		group = "SFX",
 		pitchJitter = 0.08,
@@ -74,7 +74,7 @@ SoundConfig.List = {
 		looped = false,
 	},
 	water = {
-		assetId = 0,
+		assetId = 88923676276226,
 		volume = 0.45,
 		group = "SFX",
 		pitchJitter = 0.08,
@@ -82,7 +82,7 @@ SoundConfig.List = {
 		looped = false,
 	},
 	harvest = {
-		assetId = 0,
+		assetId = 130086974350436,
 		volume = 0.5,
 		group = "SFX",
 		pitchJitter = 0.06,
@@ -90,7 +90,7 @@ SoundConfig.List = {
 		looped = false,
 	},
 	unripe = {
-		assetId = 0,
+		assetId = 110044469643217,
 		volume = 0.45,
 		group = "SFX",
 		pitchJitter = 0.05,
@@ -98,7 +98,7 @@ SoundConfig.List = {
 		looped = false,
 	},
 	dig = {
-		assetId = 0,
+		assetId = 82527451388906,
 		volume = 0.55,
 		group = "SFX",
 		pitchJitter = 0.08,
@@ -106,7 +106,7 @@ SoundConfig.List = {
 		looped = false,
 	},
 	fossil = {
-		assetId = 0,
+		assetId = 99147665758035,
 		volume = 0.5,
 		group = "SFX",
 		pitchJitter = 0,
@@ -114,7 +114,7 @@ SoundConfig.List = {
 		looped = false,
 	},
 	deposit = {
-		assetId = 0,
+		assetId = 83569891644810,
 		volume = 0.5,
 		group = "SFX",
 		pitchJitter = 0.05,
@@ -122,7 +122,7 @@ SoundConfig.List = {
 		looped = false,
 	},
 	unload = {
-		assetId = 0,
+		assetId = 84465051508567,
 		volume = 0.45,
 		group = "SFX",
 		pitchJitter = 0.05,
@@ -130,7 +130,7 @@ SoundConfig.List = {
 		looped = false,
 	},
 	refine = {
-		assetId = 0,
+		assetId = 87190890184841,
 		volume = 0.4,
 		group = "SFX",
 		pitchJitter = 0.05,
@@ -138,7 +138,7 @@ SoundConfig.List = {
 		looped = false,
 	},
 	charge = {
-		assetId = 0,
+		assetId = 96372285494734,
 		volume = 0.15,
 		group = "SFX",
 		pitchJitter = 0,
@@ -146,7 +146,7 @@ SoundConfig.List = {
 		looped = true,
 	},
 	research = {
-		assetId = 0,
+		assetId = 130060828786274,
 		volume = 0.4,
 		group = "UI",
 		pitchJitter = 0,
@@ -154,7 +154,7 @@ SoundConfig.List = {
 		looped = false,
 	},
 	purchase = {
-		assetId = 0,
+		assetId = 103635677731633,
 		volume = 0.5,
 		group = "UI",
 		pitchJitter = 0,
@@ -162,7 +162,7 @@ SoundConfig.List = {
 		looped = false,
 	},
 	click = {
-		assetId = 0,
+		assetId = 86251483589180,
 		volume = 0.3,
 		group = "UI",
 		pitchJitter = 0.03,
@@ -170,7 +170,7 @@ SoundConfig.List = {
 		looped = false,
 	},
 	hover = {
-		assetId = 0,
+		assetId = 130193113100028,
 		volume = 0.12,
 		group = "UI",
 		pitchJitter = 0.03,
@@ -178,7 +178,7 @@ SoundConfig.List = {
 		looped = false,
 	},
 	error = {
-		assetId = 0,
+		assetId = 88262049590710,
 		volume = 0.35,
 		group = "UI",
 		pitchJitter = 0,
@@ -186,7 +186,7 @@ SoundConfig.List = {
 		looped = false,
 	},
 	ambient = {
-		assetId = 0,
+		assetId = 95329956277982,
 		volume = 0.25,
 		group = "Ambient",
 		pitchJitter = 0,

@@ -123,11 +123,18 @@ local function cellTop(origin: Vector3, x: number, y: number): Vector3
 	return origin + Vector3.new(x * PITCH, 0, -y * PITCH)
 end
 
+-- The farm village layout (GameConfig.Grid.PlotSlots); past the last slot, the old rows far
+-- north of the map so an oversized server never builds a plot inside the village or a farm.
 local function plotCenter(index: number): Vector3
-	local col = (index - 1) % GRID.PlotsPerRow
-	local row = math.floor((index - 1) / GRID.PlotsPerRow)
+	local slot = GRID.PlotSlots[index]
+	if slot ~= nil then
+		return Vector3.new(slot[1], 0, slot[2])
+	end
+	local overflow = index - #GRID.PlotSlots
+	local col = (overflow - 1) % GRID.PlotsPerRow
+	local row = math.floor((overflow - 1) / GRID.PlotsPerRow)
 	local x = (col - (GRID.PlotsPerRow - 1) / 2) * GRID.PlotSpacing
-	local z = GRID.PlotRowOffset + row * GRID.PlotSpacing
+	local z = -(GRID.OverflowOffset + row * GRID.PlotSpacing)
 	return Vector3.new(x, 0, z)
 end
 
@@ -261,15 +268,48 @@ local function refreshSign(plot: Plot)
 	end
 end
 
+--[[
+	The low-poly soil tile (tools/blender/tiles.py -> ReplicatedStorage.Assets.Tiles.Soil): a
+	bevelled slab authored at exactly TileSize x TileHeight x TileSize, cloned in place of the
+	plain Part. Same name, size, CollisionGroup and attributes, so nothing else changes; the
+	client's SoilLook still sets Material / MaterialVariant / Color on it. Missing, or nothing
+	visible in it: the Part, as before.
+]]
+local function soilTemplate(): BasePart?
+	local assets = ReplicatedStorage:FindFirstChild("Assets")
+	local tiles = assets and assets:FindFirstChild("Tiles")
+	local soil = tiles and tiles:FindFirstChild("Soil")
+	local part = soil and soil:FindFirstChildWhichIsA("BasePart", true)
+	if part ~= nil and part.Size.Magnitude > 0.2 and part.Transparency < 0.9 then
+		return part
+	end
+	return nil
+end
+local SOIL_TEMPLATE = soilTemplate()
+
 local function newTilePart(plot: Plot, x: number, y: number): Tile
 	local top = cellTop(plot.origin, x, y)
-	local part = makePart(
-		string.format("Tile_%d_%d", x, y),
-		Vector3.new(GRID.TileSize, GRID.TileHeight, GRID.TileSize),
-		top - Vector3.new(0, GRID.TileHeight / 2, 0),
-		rgb(CropConfig.SoilColor),
-		Enum.Material.Ground
-	)
+	local name = string.format("Tile_%d_%d", x, y)
+	local size = Vector3.new(GRID.TileSize, GRID.TileHeight, GRID.TileSize)
+	local center = top - Vector3.new(0, GRID.TileHeight / 2, 0)
+	local part: BasePart
+	if SOIL_TEMPLATE ~= nil then
+		part = SOIL_TEMPLATE:Clone()
+		part.Name = name
+		part.Size = size
+		part.CFrame = CFrame.new(center)
+		part.Color = rgb(CropConfig.SoilColor)
+		part.Material = Enum.Material.Ground
+		part.Anchored = true
+		part.CanCollide = true
+		part.CanQuery = true
+		part.CanTouch = true
+		for key in part:GetAttributes() do
+			part:SetAttribute(key, nil)
+		end
+	else
+		part = makePart(name, size, center, rgb(CropConfig.SoilColor), Enum.Material.Ground)
+	end
 	part.CollisionGroup = COLLISION.Tiles -- characters walk on the Base, never on a farm's tiles
 	part:SetAttribute("X", x)
 	part:SetAttribute("Y", y)
