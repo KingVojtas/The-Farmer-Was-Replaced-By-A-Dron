@@ -180,6 +180,231 @@ def wedge(name, base, tip, width, thickness, mat, collection):
     return _finish(obj, name, mat, collection)
 
 
+# ---------------------------------------------------------------- sculpted shapes (v2 art pass)
+# Built straight from vertex lists (bmesh-free, no operators), so a curved leaf, a lofted hull or
+# a bent cactus arm costs exactly the triangles it needs. Every point is a GAME coordinate. The
+# object's origin is the world origin: these shapes are built in place and never rotated after.
+
+
+def mesh_from(name, verts, faces, mat, collection):
+    """A mesh object from game-space vertices and face index tuples."""
+    me = bpy.data.meshes.new("SM_" + name)
+    me.from_pydata([g(*v) for v in verts], [], [tuple(f) for f in faces])
+    me.validate()
+    me.update()
+    obj = bpy.data.objects.new(name, me)
+    collection.objects.link(obj)
+    if mat is not None:
+        me.materials.append(mat)
+    return obj
+
+
+def loft(name, rings, mat, collection, cap_start=True, cap_end=True):
+    """Skins a list of rings (each a list of game points, all the same length; a ring of ONE
+    point is an apex, fanned). Caps close the open ends as n-gons (triangulated on export)."""
+    verts, faces, starts = [], [], []
+    for r in rings:
+        starts.append(len(verts))
+        verts += list(r)
+    for k in range(len(rings) - 1):
+        a, b = starts[k], starts[k + 1]
+        na, nb = len(rings[k]), len(rings[k + 1])
+        # Winding: outward-facing for rings that turn like ring_pts (x toward z) while the loft
+        # climbs (and for tube sections, which turn the same way round the path). Open shapes
+        # (a stalk without caps, a glass shell) keep this; finalize only re-orients closed ones.
+        if na == nb:
+            for i in range(na):
+                j = (i + 1) % na
+                faces.append((a + i, b + i, b + j, a + j))
+        elif nb == 1:
+            for i in range(na):
+                faces.append((a + i, b, a + (i + 1) % na))
+        elif na == 1:
+            for i in range(nb):
+                faces.append((a, b + i, b + (i + 1) % nb))
+        else:
+            raise ValueError("loft: rings must match in size (or be a single apex point)")
+    if cap_start and len(rings[0]) > 2:
+        faces.append(tuple(range(starts[0], starts[0] + len(rings[0]))))
+    if cap_end and len(rings[-1]) > 2:
+        faces.append(tuple(reversed(range(starts[-1], starts[-1] + len(rings[-1])))))
+    return mesh_from(name, verts, faces, mat, collection)
+
+
+def ring_pts(center, rx, rz, n, phase=0.0, wobble=None):
+    """n points round a horizontal ellipse at game `center`; wobble(i) -> radius factor."""
+    cx, cy, cz = center
+    out = []
+    for i in range(n):
+        a = phase + i / n * 2 * math.pi
+        k = wobble(i) if wobble else 1.0
+        out.append((cx + math.cos(a) * rx * k, cy, cz + math.sin(a) * rz * k))
+    return out
+
+
+def rounded_rect(center, hx, hz, chamfer, segs=2):
+    """A horizontal rounded rectangle (corner radius `chamfer`, `segs` steps per corner)."""
+    cx, cy, cz = center
+    out = []
+    for qx, qz, a0 in ((1, 1, 0), (-1, 1, 90), (-1, -1, 180), (1, -1, 270)):
+        ox, oz = cx + qx * (hx - chamfer), cz + qz * (hz - chamfer)
+        for s in range(segs + 1):
+            a = math.radians(a0 + 90 * s / segs)
+            out.append((ox + math.cos(a) * chamfer, cy, oz + math.sin(a) * chamfer))
+    return out
+
+
+def scaled(points, center, k, y=None):
+    """Points scaled round `center` in x / z (and moved to height y)."""
+    cx, cy, cz = center
+    return [(cx + (p[0] - cx) * k, p[1] if y is None else y, cz + (p[2] - cz) * k) for p in points]
+
+
+def bezier(p0, p1, p2, n):
+    """n + 1 points along a quadratic Bezier curve (game coords)."""
+    out = []
+    for i in range(n + 1):
+        t = i / n
+        a, b, c = (1 - t) ** 2, 2 * (1 - t) * t, t * t
+        out.append(tuple(a * p0[k] + b * p1[k] + c * p2[k] for k in range(3)))
+    return out
+
+
+SEC_CIRCLE = None  # tube(section=None) = a regular polygon of `sides`
+SEC_LEAF = ((1.0, 0.0), (0.0, 0.32), (-1.0, 0.0))  # flat underside, raised midrib (6 tris a segment)
+SEC_BLADE = ((1.0, 0.0), (0.0, 0.18), (-1.0, 0.0), (0.0, -0.12))  # a thin diamond (rotor blades, grass)
+
+
+def tube(name, pts, radii, mat, collection, sides=6, section=SEC_CIRCLE, up=(0, 1, 0), phase=0.0, cap=True, roll=0.0):
+    """A tube / blade along a polyline of game points. radii[k] = the size at pts[k] (0 = an apex).
+    section: 2D offsets (side, normal) scaled by the radius; None = a regular `sides`-gon.
+    `up` picks the cross-section's normal direction (a leaf's face looks toward `up`); `roll`
+    turns the section round the path (radians, a blade's pitch)."""
+    P = [Vector(p) for p in pts]
+    if section is None:
+        section = [(math.cos(phase + i / sides * 2 * math.pi), math.sin(phase + i / sides * 2 * math.pi)) for i in range(sides)]
+    rings = []
+    side = None
+    prev_t = None
+    for k, p in enumerate(P):
+        t = (P[min(k + 1, len(P) - 1)] - P[max(k - 1, 0)]).normalized()
+        if side is None:  # the first frame faces `up`; later frames are parallel-transported
+            ref = Vector(up)
+            if abs(t.dot(ref.normalized())) > 0.97:
+                ref = Vector((1, 0, 0)) if abs(t.x) < 0.9 else Vector((0, 0, 1))
+            side = t.cross(ref).normalized()
+        else:  # (no twist at an elbow, e.g. a cactus arm turning upward)
+            side = prev_t.rotation_difference(t) @ side
+            side = (side - t * side.dot(t)).normalized()
+        prev_t = t
+        nrm = side.cross(t).normalized()
+        s_, n_ = side, nrm
+        if roll:
+            c, s = math.cos(roll), math.sin(roll)
+            s_, n_ = side * c + nrm * s, nrm * c - side * s
+        r = radii[k]
+        if r <= 1e-6:
+            rings.append([tuple(p)])
+            continue
+        rings.append([tuple(p + s_ * (a * r) + n_ * (b * r)) for a, b in section])
+    return loft(name, rings, mat, collection, cap_start=cap, cap_end=cap)
+
+
+def leaf(name, base, tip, width, mat, collection, bend=0.3, segments=3, up=(0, 1, 0), section=SEC_LEAF, curl=0.0, profile=None):
+    """A curved, tapered leaf from `base` to `tip`: it arcs `bend` x its length upward / along
+    `up` at the middle and narrows to a point. profile: width factors per point (len segments+1)."""
+    b, t = Vector(base), Vector(tip)
+    mid = (b + t) / 2 + Vector(up).normalized() * (t - b).length * bend
+    pts = bezier(tuple(b), tuple(mid), tuple(t), segments)
+    if profile is None:
+        profile = [0.35] + [math.sin(math.pi * (0.25 + 0.6 * k / segments)) for k in range(1, segments)] + [0.0]
+    return tube(name, pts, [width * f for f in profile], mat, collection, section=section, up=up, roll=curl, cap=True)
+
+
+def torus(name, center, major, minor, mat, collection, major_segments=16, minor_segments=4, phase=math.pi / 4, axis="Y", twist=0.0):
+    """A ring lying flat (axis Y, the game's ground plane) or standing (axis X / Z).
+    twist: radians the cross-section turns per segment (helical facets read as coil windings)."""
+    cx, cy, cz = center
+    rings = []
+    for i in range(major_segments):
+        a = i / major_segments * 2 * math.pi
+        ring = []
+        for j in range(minor_segments):
+            b = phase + i * twist + j / minor_segments * 2 * math.pi
+            rr = major + math.cos(b) * minor
+            h = math.sin(b) * minor
+            if axis == "Y":
+                ring.append((cx + math.cos(a) * rr, cy + h, cz + math.sin(a) * rr))
+            elif axis == "Z":
+                ring.append((cx + math.cos(a) * rr, cy + math.sin(a) * rr, cz + h))
+            else:
+                ring.append((cx + h, cy + math.cos(a) * rr, cz + math.sin(a) * rr))
+        rings.append(ring)
+    verts, faces = [], []
+    for r in rings:
+        verts += r
+    m = minor_segments
+    for i in range(major_segments):
+        a, b_ = i * m, ((i + 1) % major_segments) * m
+        for j in range(m):
+            k = (j + 1) % m
+            faces.append((a + j, a + k, b_ + k, b_ + j))  # outward
+    return mesh_from(name, verts, faces, mat, collection)
+
+
+def bevel_mod(obj, width=0.03, segments=1, angle=40):
+    """A Bevel modifier (applied on export) on edges sharper than `angle` degrees."""
+    mod = obj.modifiers.new("Bevel", "BEVEL")
+    mod.width, mod.segments = width, segments
+    mod.limit_method = "ANGLE"
+    mod.angle_limit = math.radians(angle)
+    mod.harden_normals = True
+    return obj
+
+
+def apply_mods(obj):
+    """Applies every modifier (so a later join keeps them)."""
+    bpy.context.view_layer.objects.active = obj
+    bpy.ops.object.select_all(action="DESELECT")
+    obj.select_set(True)
+    for mod in list(obj.modifiers):
+        bpy.ops.object.modifier_apply(modifier=mod.name)
+    return obj
+
+
+def jitter(obj, amount, seed=1, keep_bottom=None):
+    """Nudges every vertex by up to `amount` (deterministic): hand-made irregularity for organics.
+    keep_bottom: vertices with game y below this stay put (a crop stays rooted on the tile)."""
+    import random as _r
+
+    rng = _r.Random(seed)
+    for v in obj.data.vertices:
+        w = obj.matrix_world @ v.co
+        if keep_bottom is not None and w.z < keep_bottom:
+            continue
+        v.co.x += rng.uniform(-amount, amount)
+        v.co.y += rng.uniform(-amount, amount)
+        v.co.z += rng.uniform(-amount, amount)
+    obj.data.update()
+    return obj
+
+
+def ico(name, center, radius, mat, collection, subdiv=1, scale=(1, 1, 1), seed=None, rough=0.0):
+    """A faceted icosphere blob (canopies, rocks): `rough` pushes vertices in / out for a hand-cut read."""
+    bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=subdiv, radius=radius, location=g(*center))
+    obj = bpy.context.active_object
+    obj.scale = gsize(*scale)
+    bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+    if rough and seed is not None:
+        import random as _r
+
+        rng = _r.Random(seed)
+        for v in obj.data.vertices:
+            v.co *= 1 + rng.uniform(-rough, rough)
+        obj.data.update()
+    return _finish(obj, name, mat, collection)
+
+
 def set_origin(obj, game_point):
     """Moves an object's origin to a game-space point without moving its geometry."""
     bpy.context.view_layer.objects.active = obj
@@ -303,6 +528,38 @@ def _edit_all(meshes, action):
     bpy.ops.object.mode_set(mode="OBJECT")
 
 
+def fix_normals(obj):
+    """Merge by distance, then point every CLOSED island's faces outward. Open islands (a stalk
+    without caps, a glass shell, a hat band) keep their built winding: an automatic recalc can
+    flip an open surface inward, and Roblox draws only front faces, so it would vanish in game."""
+    bm = bmesh.new()
+    bm.from_mesh(obj.data)
+    bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=0.001)
+    seen = set()
+    open_faces = 0
+    for f in bm.faces:
+        if f in seen:
+            continue
+        island, stack = [], [f]
+        seen.add(f)
+        while stack:
+            x = stack.pop()
+            island.append(x)
+            for e in x.edges:
+                for lf in e.link_faces:
+                    if lf not in seen:
+                        seen.add(lf)
+                        stack.append(lf)
+        if all(len(e.link_faces) == 2 for x in island for e in x.edges):
+            bmesh.ops.recalc_face_normals(bm, faces=island)
+        else:
+            open_faces += len(island)
+    bm.to_mesh(obj.data)
+    bm.free()
+    obj.data.update()
+    return open_faces
+
+
 def game_bounds(objects):
     """(min, max) of the evaluated world vertices, in GAME coordinates (x, y_up, z)."""
     dg = bpy.context.evaluated_depsgraph_get()
@@ -407,11 +664,8 @@ def finalize(objects, budget, pivot="bottom", center_part=None, allow_float=Fals
     meshes = [o for o in objects if o.type == "MESH"]
     problems = []
 
-    def clean():
-        bpy.ops.mesh.remove_doubles(threshold=0.001)
-        bpy.ops.mesh.normals_make_consistent(inside=False)
-
-    _edit_all(meshes, clean)
+    for o in meshes:
+        fix_normals(o)
 
     before = tri_count(meshes)
     ratio = min(1.0, budget / before) if before > 0 else 1.0

@@ -138,3 +138,38 @@ material (SmoothPlastic) simply drops the texture on those parts.
 `roblox_upload.py models` also re-finishes a model when only its part sheet changed (a fresh
 download of the same asset, then `apply_parts`), so a recolour or a new variant needs no
 re-upload.
+
+## 9. v2 art pass (2026-11-17): sculpted models, Blender-baked textures
+
+Same contracts (part names, pivots, PaintSlot, budgets), much more shape. New sculpting helpers
+in `tools/blender/_common.py` (`loft`, `tube` with parallel-transport frames, curved `leaf`,
+`torus` with a winding twist, `rounded_rect`, `bezier`). Lofts are built outward-facing and
+`finalize` re-orients only CLOSED islands, because Roblox draws front faces only and an open
+surface (a stalk without caps, a glass shell) flipped inward would vanish; the previews now
+cull back faces, so such a hole shows up there first.
+
+| Asset | Before | v2 | Tris / parts |
+|---|---|---|---|
+| Drone | box hull, flat bars | lofted chamfered hull, rotor guard rings, motor pods, 3-strut guards, pitched tapered blades, landing skids, belly pod, front vents, rounded ceramic visor frame, stadium eye, bevelled battery cells | 1,878 / 13 (<= 1,900 / 16) |
+| 21 crop stages | wedges + spheres | curved midrib leaves, 3-tier wheat sheaf with drooping ears, lobed carrot fronds, two-ring sunflower on a thick disc, 20-rib pumpkin with tendril, fluted cactus with elbowed arms, blob-cluster tree with root flare | all inside the §3.3 budgets, <= 4 parts |
+| Charger | plate + rings | hex deck, ceramic H (own part), wound copper coils, edge light guides in corner blocks, conduit, banded capacitor pylon with cables | 1,310 / 14 |
+| Factory | boxes | louvred housing with pillars, banded drum on A-frames, flanged copper pipes, glass tanks with steel caps round the biofluid (`Slit`), wooden intake funnel + straw spill, lamp bracket, biofuel barrels, chimney with hazard bands | 2,744 / 12 |
+| Hats | primitives | drooping straw brim + dented crown + bow, curled top-hat brim, 8-panel beanie with pitched propeller, collared antenna, faceted halo | 240-282 / <= 3 |
+| Nature props | 6 x 4 blobs | 7 x 4 hand-cut canopy clusters, flared trunks, tiered jagged pines, petal flowers, curved grass, rimmed mushroom cap with raised spots | within each prop budget |
+
+**Textures:** `blender -b -P tools/blender/textures.py` bakes all 4 soil states and the 7
+detail variants at **1024²** (were 512²): Blender's 4D noise on a torus (seamless by
+construction) + an exact periodic Voronoi in numpy, cavity AO, normals from height.
+`tools/build_textures.py` keeps the trim sheet and the crop palette atlas; its old soil /
+detail sets now need `--legacy`.
+
+**Station lights (BUG-28):** the artist charger's `Ring1..4`, `PylonLight`, `Conduit` and the
+factory's `Slit` + `Lamp` now light and pulse in game (they never did with the uploaded models).
+
+**Status: done (2026-11-17).** All 34 changed texture maps and 40 models (drone, 21 crops,
+2 stations, 5 hats, 11 nature props) were uploaded with `tools/roblox_upload.py` (0 failed).
+`materials.project.json`, `assets/` and `map/props/` are updated, and `map/Map.rbxm` was rebuilt
+(3,389 props). `tools/studio_smoke.py` passes 11/11. The first run failed "no script errors"
+for a few minutes while Roblox was still processing the new variants' TexturePack. Not redone in this pass:
+the buildings / farm props / landmarks (`buildings.py`, rest of `props.py`), the tile kit, and the
+icon atlas renders (`icons.py` uses the old crop / drone looks until it is re-run).

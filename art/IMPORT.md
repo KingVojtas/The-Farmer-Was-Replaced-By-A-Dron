@@ -13,7 +13,8 @@ Nothing here changes gameplay. Look rules: `docs/ART_BIBLE.md`; contract: `asset
 | Charger + factory | `blender -b -P tools/blender/stations.py -- --out tools/blender/out/Stations` | `charger.fbx`, `factory.fbx` |
 | 5 hats | `blender -b -P tools/blender/hats.py -- --out tools/blender/out/Hats` | `<style>.fbx` |
 | Preview renders | `blender -b -P tools/blender/preview.py -- --out tools/blender/out` | `previews/{drone,crops,stations,hats}.png` |
-| PBR textures | `python tools/build_textures.py` | `art/textures/{soil,hardsurface,crops}/` (already in the repo) |
+| Soil + detail PBR textures (1024², v2) | `blender -b -P tools/blender/textures.py` | `art/textures/{soil,detail}/` (in the repo) |
+| Trim sheet + crop atlas | `python tools/build_textures.py` | `art/textures/{hardsurface,crops}/` (in the repo) |
 | Icon atlas | `python tools/build_icon_atlas.py` | `art/IconAtlas.png` + `IconAtlas.luau` |
 
 **Finalize pass (2026-11-12, `_common.finalize`):** every script now runs the Roblox technical-art

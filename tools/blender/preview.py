@@ -50,6 +50,7 @@ def render(path, target, distance, width=1600, height=1000, ortho=None, pitch=60
     shading.show_shadows = True
     shading.show_cavity = True
     shading.cavity_type = "WORLD"
+    shading.show_backface_culling = True  # like Roblox: an inward-facing surface shows up as a hole
     scene.render.resolution_x, scene.render.resolution_y = width, height
     scene.render.film_transparent = False
     scene.world = bpy.data.worlds.new("PreviewWorld")
@@ -90,7 +91,7 @@ if __name__ == "__main__":
     out = os.path.abspath(parse_out(os.path.join(os.path.dirname(os.path.abspath(__file__)), "out")))
 
     def drone():
-        ground(12, (0, -0.4, 0))
+        ground(14, (0, -1.0, 0))  # under the landing skids (they reach y = -0.95)
         import_glb(os.path.join(out, "Drone.glb"), (0, 0, 0))
 
     def crops():
@@ -101,6 +102,13 @@ if __name__ == "__main__":
                 if os.path.isfile(path):
                     # grass on top (far = game -Z), cactus at the bottom; stages left -> right
                     import_glb(path, (col * 6.4, 0, (row - 3) * 6.4), STAGE_SCALE[stage])
+
+    def crops_ready():
+        ground(70, (19, 0, 0))
+        for i, crop in enumerate(CROPS):
+            path = os.path.join(out, "Crops", crop, "ready.glb")
+            if os.path.isfile(path):
+                import_glb(path, (i * 6.4, 0, 0))
 
     def stations():
         ground(24, (3.2, -0.01, 0))
@@ -141,6 +149,8 @@ if __name__ == "__main__":
     sheet("yard", out, props_row(small, 8), (20, 1.5, 0), 120, 2200, 700, ortho=50, pitch=30, front=True)
     sheet("landmarks", out, props_row(["windmill", "plaza", "pond", "path"], 30), (45, 3, 0), 200, 2000, 800, ortho=125)
     sheet("drone", out, drone, (0, 0, 0), 30, 1400, 1000, ortho=7.5)
+    sheet("drone_front", out, drone, (0, 0, 0), 30, 1400, 1000, ortho=7.0, pitch=22, front=True)
     sheet("crops", out, crops, (6.4, 1, 0), 120, 1000, 1500, ortho=44)
+    sheet("crops_ready", out, crops_ready, (19.2, 1.5, 0), 80, 2200, 700, ortho=46, pitch=35)
     sheet("stations", out, stations, (3.2, 1, 0), 60, 1600, 1000, ortho=15)
     sheet("hats", out, hats, (6.4, 0.5, 0), 60, 1800, 700, ortho=16)

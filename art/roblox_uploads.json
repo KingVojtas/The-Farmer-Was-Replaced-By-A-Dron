@@ -91,333 +91,333 @@
   },
   "art/textures/detail/Bark_Color.png": {
     "type": "Image",
-    "sha256": "53cb10aa4843d5ee9e287e5a3a1586ccd68aaf333491bf1e932fff8478ad1b45",
-    "assetId": "134386270415084",
-    "decalId": "127686168966764"
+    "sha256": "1eef5de9d4e73d894944c28a9545ba1ce8806bae6812415e3407a7263b5c61cb",
+    "assetId": "137741489041931",
+    "decalId": "110067895595297"
   },
   "art/textures/detail/Bark_Normal.png": {
     "type": "Image",
-    "sha256": "b9e4b0f434a25ca9e62e1e25f72b84c7510049a79c9621289966ec724528d64d",
-    "assetId": "121369779904558",
-    "decalId": "91581224628264"
+    "sha256": "a3406c1138920d23aa9f11deefc9533969cb1493ed68c260881108591e7cfbcd",
+    "assetId": "72618484024794",
+    "decalId": "78304093820749"
   },
   "art/textures/detail/Bark_Roughness.png": {
     "type": "Image",
-    "sha256": "417403a8cbf2d0ee18efc239651a775f13047683de6b6bbcfb9d8d2505a9c1d2",
-    "assetId": "78364251392839",
-    "decalId": "99259791875491"
+    "sha256": "dec01157a71052c85c55664e960aaffbef8060db4cfeabf4d3c54f5f204bce22",
+    "assetId": "112066533260198",
+    "decalId": "132206300396315"
   },
   "art/textures/detail/CropLeaf_Color.png": {
     "type": "Image",
-    "sha256": "b381555657890aaa97c92156e3cd315e7d3ad7fe9b1beeb4fbff0ab5c44b3c07",
-    "assetId": "78497921035866",
-    "decalId": "137236718348370"
+    "sha256": "afa684fc8b3c22003fbf1e5ba0cf0e85ce85b1db5c53517f04fd85ffd4a061dc",
+    "assetId": "87467220873766",
+    "decalId": "76019930150577"
   },
   "art/textures/detail/CropLeaf_Normal.png": {
     "type": "Image",
-    "sha256": "0b6b8e17cffb991c295695f1108212652e3d97136845e3fa8db0c9531383962a",
-    "assetId": "101184850106617",
-    "decalId": "105429306686135"
+    "sha256": "8e9b62062e0854e7869d91efead21b9d983a6c0749d8c6d6d8a1e5db414f588a",
+    "assetId": "80609124105787",
+    "decalId": "121919059439860"
   },
   "art/textures/detail/CropLeaf_Roughness.png": {
     "type": "Image",
-    "sha256": "9349aa65563fe17b6e0593eeb189e0fee62007863dfbbf0e2ed3eed81db1d719",
-    "assetId": "116828246089054",
-    "decalId": "113319943972406"
+    "sha256": "66343832fc1573527da4e16b4cf5c1d96c1b621e78ac96c6dd215b3f81ec99a8",
+    "assetId": "71152092824800",
+    "decalId": "85760150514539"
   },
   "art/textures/detail/CropSkin_Color.png": {
     "type": "Image",
-    "sha256": "5cddf469214b6b6429a388df856724a8e99cc62ec8b7237047f052ef9523eb0b",
-    "assetId": "136134375541713",
-    "decalId": "97648602518202"
+    "sha256": "72f280981f31202541099747116ccdc1038728c15cb08cc8ca4b9c051cae25d3",
+    "assetId": "131356565134404",
+    "decalId": "127545110829711"
   },
   "art/textures/detail/CropSkin_Normal.png": {
     "type": "Image",
-    "sha256": "e18e84d215dd4dc72fd2c49a3cc63ea84c4886ab33ece679d974d8a63044df3f",
-    "assetId": "97650403933501",
-    "decalId": "129523143056414"
+    "sha256": "0287264975c83fc39fe09be5b2e899bfae7abc8d84093898d3deb060382de641",
+    "assetId": "132644860929478",
+    "decalId": "120657855185933"
   },
   "art/textures/detail/CropSkin_Roughness.png": {
     "type": "Image",
-    "sha256": "db6d13d12ae9b226a71b0505fdffa78fd5ea95664ac283527afd78da712d4aad",
-    "assetId": "88517848224845",
-    "decalId": "93101583686366"
+    "sha256": "9780732aa4e6d54d030dc9c5b0e6d97079f6007ff4e46da6c14aa9584136769f",
+    "assetId": "75529294899473",
+    "decalId": "84326344253730"
   },
   "art/textures/detail/DroneHull_Color.png": {
     "type": "Image",
-    "sha256": "d310af6350f7d273fdc54181b564b4a0ead105277277328e34b5483f7d435f19",
-    "assetId": "96913859061856",
-    "decalId": "92536407378313"
+    "sha256": "d5c9ff01cb33b2a8ce9723ef09368be061025e8ecf19411306e328152f46980c",
+    "assetId": "83433245920072",
+    "decalId": "71999394790458"
   },
   "art/textures/detail/DroneHull_Metalness.png": {
     "type": "Image",
-    "sha256": "19471bad764193d7661dbf2fc7414910c00232ee04c6f156f1ef4135b611fba0",
-    "assetId": "100922419393312",
-    "decalId": "131652199050999"
+    "sha256": "8f336a5e03ed5b64f6f0acfecea792202c39f6b361dd422ede40c6160858f84f",
+    "assetId": "125558056703491",
+    "decalId": "119957651739832"
   },
   "art/textures/detail/DroneHull_Normal.png": {
     "type": "Image",
-    "sha256": "c4719c783f54c7d4cc12981685cdbd3b8ce59c9872488af88026677cbc09f833",
-    "assetId": "83504791123404",
-    "decalId": "134474660153588"
+    "sha256": "9b659cf8f0c5ded728875148d6bd24fbe159f1f04025e51cd51ba1167e0cc812",
+    "assetId": "84390261022969",
+    "decalId": "105024335340077"
   },
   "art/textures/detail/DroneHull_Roughness.png": {
     "type": "Image",
-    "sha256": "a9e58c9db32d63c4529bc1ce1850c4ea126ca6ea21f240f3cce7e51bb044fbec",
-    "assetId": "126831334576439",
-    "decalId": "128369586681094"
+    "sha256": "bd458b6c8a3af9cac6673b6295fcd127e833ae628dcc0c32b9b61773bce0487f",
+    "assetId": "137985620561851",
+    "decalId": "100858453692348"
   },
   "art/textures/detail/Planks_Color.png": {
     "type": "Image",
-    "sha256": "9cef9536696f45120bb320374c2d3ec75c9953e9399d5863f51fb3794201073f",
-    "assetId": "102406663034755",
-    "decalId": "115638468886431"
+    "sha256": "5f6e913d62638d1b2a4e305caf1da370e3e5aefa2305d3f52b57163a969d9ae5",
+    "assetId": "94812881719905",
+    "decalId": "128004037327123"
   },
   "art/textures/detail/Planks_Normal.png": {
     "type": "Image",
-    "sha256": "eaa31aedfea0be7567ecd73afa133bc8db82aa539d4a5aca4c6955fe81f08446",
-    "assetId": "128839423233288",
-    "decalId": "106726181774564"
+    "sha256": "56a90a5aa728e9f49e9e3de8378a9430154f39e782057734eda6f9875d374644",
+    "assetId": "124116781023057",
+    "decalId": "70481596837113"
   },
   "art/textures/detail/Planks_Roughness.png": {
     "type": "Image",
-    "sha256": "0a0d674a08bd45d4c7806c433019cf8b7a6665a77faddd1edc39268bb820be53",
-    "assetId": "124222534663378",
-    "decalId": "81612162967829"
+    "sha256": "554f22ca03a2211925e07bf1c874a12e9479634c47d4a33bd3184283fd2df1bb",
+    "assetId": "127360693009322",
+    "decalId": "79460830913990"
   },
   "art/textures/detail/Shingles_Color.png": {
     "type": "Image",
-    "sha256": "39de78b5ac3ea7969bbc80cbf9a2d3e9f309a0d6ac12d7b690a0e0a5f396d86e",
-    "assetId": "93539264781284",
-    "decalId": "114237688715253"
+    "sha256": "63e5c996d7fab542bcb8be1fec2ac82c3b7fa0791fa59258d39fe95816410022",
+    "assetId": "122120961973456",
+    "decalId": "102300364553576"
   },
   "art/textures/detail/Shingles_Normal.png": {
     "type": "Image",
-    "sha256": "092ad26e802e0c63c0f42dcf50365b7d005ef452f5986a54bd069ef5dfb49dbc",
-    "assetId": "112409474362934",
-    "decalId": "94677377834169"
+    "sha256": "1f0649442b243d3447434228d7cc7dc71a6960816cd113b34a051f1e9ab99fa0",
+    "assetId": "83498660481508",
+    "decalId": "97322983331381"
   },
   "art/textures/detail/Shingles_Roughness.png": {
     "type": "Image",
-    "sha256": "9120696136c980532bb741be44826cd77dfc62282e82591d5e60ba7a49ecd815",
-    "assetId": "110918049594956",
-    "decalId": "137659265609185"
+    "sha256": "cfe35ffe11463dc53a9718812358e8bcb5b5249030e49b06dfc6637efe454cfe",
+    "assetId": "135993855976336",
+    "decalId": "81949784324848"
   },
   "art/textures/detail/Stone_Color.png": {
     "type": "Image",
-    "sha256": "287402502f4e9f7d6f796dd11993d25cfaabee09aed6e5b747107527148140b0",
-    "assetId": "137568651215467",
-    "decalId": "89508867940127"
+    "sha256": "79750e5197c37fb3658cca5c469696c76b330052da23756ca77728e409d81b72",
+    "assetId": "92221961116611",
+    "decalId": "103497475102613"
   },
   "art/textures/detail/Stone_Normal.png": {
     "type": "Image",
-    "sha256": "c1785db568638795cd63548eee450e95d22e3b17599a2dfcbc0c7f2f51a97a91",
-    "assetId": "112526316998032",
-    "decalId": "93422251361220"
+    "sha256": "6bf4718c1f7437be51563c10bda50da3ae6b84929c1c902758f890ad45a16a90",
+    "assetId": "101978240085090",
+    "decalId": "117403959207266"
   },
   "art/textures/detail/Stone_Roughness.png": {
     "type": "Image",
-    "sha256": "2b590526bfa2ace3b85e93480530f46e25c09bb8a150439c9977505f632f48be",
-    "assetId": "89381253465984",
-    "decalId": "78448968354470"
+    "sha256": "f81ef7976ce31e90680e9d2934e339677c9264f988775a47da7914fce5513934",
+    "assetId": "84810094472955",
+    "decalId": "85693167750777"
   },
   "art/textures/soil/SoilDry_Color.png": {
     "type": "Image",
-    "sha256": "97dd20303b39790a625e26d57d78faf09b15667360bdb8c26b8ef5b05858739d",
-    "assetId": "101405119859548",
-    "decalId": "139189657885015"
+    "sha256": "ba39ce17eaa8c9d0f85d4931f30e2f9490782dc1bca114689ab74c8474107923",
+    "assetId": "106422656743698",
+    "decalId": "102138184116285"
   },
   "art/textures/soil/SoilDry_Normal.png": {
     "type": "Image",
-    "sha256": "c64ba41295981ddc1c9db028e4c072cc06bf95ee8b3594dd7bc35b858abc5b5d",
-    "assetId": "106554969934691",
-    "decalId": "99851348661817"
+    "sha256": "93085ba119ac4e290fc73ed09f7db20527db40b0026af95de7bac35982102de8",
+    "assetId": "73287108417203",
+    "decalId": "128766524213414"
   },
   "art/textures/soil/SoilDry_Roughness.png": {
     "type": "Image",
-    "sha256": "30881d1bfd69cab99b7e805d14c9540e420c144f7b2fe250925d941f4c3715fe",
-    "assetId": "135305103518551",
-    "decalId": "76176728588020"
+    "sha256": "a1ecebc6b9004625c1bf6df493cecc431e4464ec7911dc2f8b49e7ba7d62a69e",
+    "assetId": "86104241589387",
+    "decalId": "91871048480962"
   },
   "art/textures/soil/SoilDug_Color.png": {
     "type": "Image",
-    "sha256": "369114568901bcab7e66f974052b5abdb1673eb67d2dec890daf7ad2822c5eee",
-    "assetId": "76092431982650",
-    "decalId": "80826142720928"
+    "sha256": "857147d5d13561d580c8e8e339bc5ddcd04e64fe16702ddd895f64ed4ad69415",
+    "assetId": "131107940399154",
+    "decalId": "103136800745755"
   },
   "art/textures/soil/SoilDug_Normal.png": {
     "type": "Image",
-    "sha256": "6a76199d7a4bdfc33cbc261895918e98d68ee47665a4e9f046a7e2a62087e9ac",
-    "assetId": "94461317659636",
-    "decalId": "94656797481115"
+    "sha256": "6924183a5e7e14dce3e95af84238bc32eff104763ef6774bace230f1704883ec",
+    "assetId": "133386917146662",
+    "decalId": "127172057295095"
   },
   "art/textures/soil/SoilDug_Roughness.png": {
     "type": "Image",
-    "sha256": "25d6ee611034bfff07dcfd71ad7a5fe9634ae3c84d262d646812c4352e24d860",
-    "assetId": "104780286969938",
-    "decalId": "89610269548433"
+    "sha256": "07419412dd47652b21ce61b29f460a3fdc86970fb441c3f909a6d03d172a118e",
+    "assetId": "95879206415814",
+    "decalId": "88896417042005"
   },
   "art/textures/soil/SoilTilled_Color.png": {
     "type": "Image",
-    "sha256": "68b4c4b64d22aeb099ef3c5ab8593848b059781cf5a3b987bce57659af6616b0",
-    "assetId": "103639797838473",
-    "decalId": "94150804441067"
+    "sha256": "e165c156fc710542a2f9f8b6d92c908484f5b592cce807e8f2a85ed235e776d6",
+    "assetId": "85139880785835",
+    "decalId": "130061448036325"
   },
   "art/textures/soil/SoilTilled_Normal.png": {
     "type": "Image",
-    "sha256": "40d03933424449b4abd49e73ff6bf75a271ba6e7cf9028fdbdc7d44465896ddd",
-    "assetId": "134287918036495",
-    "decalId": "86519647563278"
+    "sha256": "e2290648396159f3983670ba56b8066a8b8cae8deada6c6d6aa16c122713c14b",
+    "assetId": "106275953121332",
+    "decalId": "114666567321015"
   },
   "art/textures/soil/SoilTilled_Roughness.png": {
     "type": "Image",
-    "sha256": "646b18fe0e76e335e787be651501e0eb90d4607b166a713fc9c0e3ae411689b6",
-    "assetId": "111094247359264",
-    "decalId": "133165799832476"
+    "sha256": "e80ac3b68db7a52c7cd172e3be6a0defca1db8b769f41ed5de9ab4f696bf5b5f",
+    "assetId": "136178664336996",
+    "decalId": "131790272904075"
   },
   "art/textures/soil/SoilWet_Color.png": {
     "type": "Image",
-    "sha256": "4d4a073adaa86163b08addd7b2b7d24fbee930ffdd62ab3d3f726d568c16e44f",
-    "assetId": "83993604954453",
-    "decalId": "109194119393982"
+    "sha256": "b482f9033a65ad9436adc96ec03c9ce72d05d89bf474f577ab932ef3f363c594",
+    "assetId": "70428842046970",
+    "decalId": "107074388830650"
   },
   "art/textures/soil/SoilWet_Normal.png": {
     "type": "Image",
-    "sha256": "a62f399cb46db1f28349e5e94660aa386fc1475bfe5a38e3b7a1238065098b03",
-    "assetId": "116913705881391",
-    "decalId": "115012048548247"
+    "sha256": "a4e8636901779bacf036caf81d51c95bd2bdb323d4a293aa9098cd8bd5c881eb",
+    "assetId": "110711013310399",
+    "decalId": "72870995813175"
   },
   "art/textures/soil/SoilWet_Roughness.png": {
     "type": "Image",
-    "sha256": "4156b73009de7ddb60453e5450010d9b06298a98bfee156253f089238c53c198",
-    "assetId": "101789303583945",
-    "decalId": "82366669496292"
+    "sha256": "0d89e9338a5156d234b4de7f69b8585a3283694f08b0162a5620785de99680ab",
+    "assetId": "131063888716826",
+    "decalId": "120444409932415"
   },
   "tools/blender/out/Crops/cactus/growing.fbx": {
     "type": "Model",
-    "sha256": "4eb0da9fbb9649ad4218162e0a5ba5f7cad3dc364b3433ad998af0bd578eeb51",
-    "assetId": "83254758924615",
-    "sheet": "3ad71537f1014c1e29f7d3a1fddf1352b978c2c643ecce88a12b48f991da40a4"
+    "sha256": "856ff94ee28a28323d0cf47c0483819bcb243dce9a04334291f1cbd798cf7f23",
+    "assetId": "119389521485761",
+    "sheet": "96db0828b3e85bc4d19eae47dd85008583fceeef975bbb36c15881c6f3286100"
   },
   "tools/blender/out/Crops/cactus/ready.fbx": {
     "type": "Model",
-    "sha256": "9c4828a6f677ca639039a1ae004b763b1dbc3faba4d01f3c9ed613663f85e441",
-    "assetId": "117170467878582",
-    "sheet": "bde7a3eadbfc5a5e8c1851535a61e07b5475bc0811d565cd61df840fba9b6bbf"
+    "sha256": "3ac04c52a9348738d3c0da2081a7d2bad4c3c189d460c89c18769e07ca5799a6",
+    "assetId": "140684544573193",
+    "sheet": "c647d12cd336e85fa9ca468d663e63c7edf188e2fdbb384a7efae4ca8a00038a"
   },
   "tools/blender/out/Crops/cactus/sprout.fbx": {
     "type": "Model",
-    "sha256": "50cbbbe085538769b67058d58f38c6ecfb946bc0c59a8485fc573cc556031742",
-    "assetId": "123283219135644",
-    "sheet": "babf404efdbac658e6bd910c84c2c08b3976fa26c6eac7059ffbe8e6d9295a63"
+    "sha256": "cc691b48b8c1e6edaadd78f926991626aef692c55bacb12496efc5a09641378b",
+    "assetId": "94333119338257",
+    "sheet": "015478544eba2a94bfdc07e0c82a0e7d4112cb26e7003edc1c911ecad12a97dd"
   },
   "tools/blender/out/Crops/carrot/growing.fbx": {
     "type": "Model",
-    "sha256": "b360577cae40e483caea080f5054dd568de660b116edd00368a7b770178d84da",
-    "assetId": "81366381378215",
-    "sheet": "caf9b3b2c14f3aff6a8021d1b38e564493c826e9f2713ba3a17e0a42af732f50"
+    "sha256": "f8d459b4c01d224aa527117aced18f5595e2f63d6e9ed68bf41a90065e91c178",
+    "assetId": "90647828569962",
+    "sheet": "8a5682ccd8bab8680f5361a40c34b4f21d2dd0982fce7dbdca11b8b832812818"
   },
   "tools/blender/out/Crops/carrot/ready.fbx": {
     "type": "Model",
-    "sha256": "c6be2ae53fa591e8d5d535128682b7314891f31051859a55fcce410157b7be51",
-    "assetId": "125164399057965",
-    "sheet": "1ba1b7f7b23e97c50907ae2bf15db80b3936c6bbdea0957112e1307cb9e4df72"
+    "sha256": "efc2fcfccd6820c0956bc88986157ad1306d2d2235fd4ea6867aac77b8344218",
+    "assetId": "138444833643549",
+    "sheet": "e11f53b3eb47d621ac3f0278aa7878b2090f102cb2dc4642f588738868c94c45"
   },
   "tools/blender/out/Crops/carrot/sprout.fbx": {
     "type": "Model",
-    "sha256": "b1abfe387e46ffe909abd2f28c4b65c719c31d67d8d8d98e074769ed1881f979",
-    "assetId": "120817417061604",
-    "sheet": "8305604d5ef23e83e2e3c138de180b6ff48ac38c42fa53db757999c1eea93305"
+    "sha256": "765884a01cdd4fdcc9627ff9b972185a8b6bee1390ab746e459df513b3e31b8a",
+    "assetId": "89614327767692",
+    "sheet": "144ced3d448fd10c6cca5f3558e767529be6cce9c085506c675755586e0d2bdb"
   },
   "tools/blender/out/Crops/grass/growing.fbx": {
     "type": "Model",
-    "sha256": "f05d87047ee6a11491a275445f169da57ea0e4f15c441b4b333711e2cbc89296",
-    "assetId": "121878946086252",
-    "sheet": "7c3059b5f8776bf22f4436a6bc0a7a11353e1cc5d603ff579bd30b2404ed4196"
+    "sha256": "62ef52ec25ce4adf8725e3a85cea350daa280ca36c928dce46b8f076d9b4a4c0",
+    "assetId": "126601170588235",
+    "sheet": "0b89899ed118e7a9bb3319156dd744154a9ecd6ae9b887161fc8bbca2e608604"
   },
   "tools/blender/out/Crops/grass/ready.fbx": {
     "type": "Model",
-    "sha256": "1ba3259578f9065b2e9744a333e5dc0b3acd7609ed42dbbd2840cbc96451f586",
-    "assetId": "131132498804271",
-    "sheet": "63de1fd0dc9ebb8920c39465c2d66f37d87c3512b8b3c33fed7209c9d8c767c1"
+    "sha256": "5dda2dc40e787a7f13970bbc0f64d7f598f020e1a6c109cb1756f10f6ae27e46",
+    "assetId": "83535991689759",
+    "sheet": "852ad0252b239e7f313ea826f51717bad0efcf3e65af2093a407ca540912b5a9"
   },
   "tools/blender/out/Crops/grass/sprout.fbx": {
     "type": "Model",
-    "sha256": "85dd0b624d6691399ebb42ffad38c7485e654b574ffe7f6fd648bce856a32051",
-    "assetId": "120158407492265",
-    "sheet": "7ac336c3b7b1a3f98813ee8bba373bc7aa5fdd189d41536b0a97081ed20bca8f"
+    "sha256": "692e7b1ee2214bc6c8775cb08ae647eb3b31d8f619c9d4e8044859be00b4e77d",
+    "assetId": "101161816888611",
+    "sheet": "20d130ecfa7866b751fb71d9291c158113a05894a3709689b74d01ec12120b51"
   },
   "tools/blender/out/Crops/pumpkin/growing.fbx": {
     "type": "Model",
-    "sha256": "bebaf7694a7867ba35363b4493619849a5026b4b5c19ec686c5a4936281b9d0a",
-    "assetId": "115576090446435",
-    "sheet": "3594c7d2c5b89487fe4351f62425941f360bb66192e5e2c63742cb5939011de6"
+    "sha256": "fd8188c0ca00f9fd8d99893de8c9b4941108860d7c8191ff3f2b67125df9b13f",
+    "assetId": "112872656585984",
+    "sheet": "2d2d34682e98606b879b83000568649b6b8409ed95a83f291b650ea31aafe52f"
   },
   "tools/blender/out/Crops/pumpkin/ready.fbx": {
     "type": "Model",
-    "sha256": "83061176cdee6bacedaa3de8e6b53796819a1279e5a309a41a1c08a23cc0813b",
-    "assetId": "104559219503315",
-    "sheet": "96cd63dd21097927ad3734f7ef7e9879c07249ed856d08e9d3d36dbc623d8a2c"
+    "sha256": "1758a06df80d2b5b1409f7203c5bc8b53393038e0779eb0d7e4ec7b8c8fda679",
+    "assetId": "72935268160654",
+    "sheet": "dc73766a5e17d5239799e39d1061ebadd6764bd11694c369ce59ceba8d412de9"
   },
   "tools/blender/out/Crops/pumpkin/sprout.fbx": {
     "type": "Model",
-    "sha256": "25464dd82ae63984111b7a87458d7af8afe55ecc3b44c2cdca8bcece90a66141",
-    "assetId": "128654399669990",
-    "sheet": "3355228ba7680c6cc20693faec6baeb27e5b161021b0fc2e4a761d4fed7eae12"
+    "sha256": "b3884bec0748f94a194686cf0bea5c70a978742dd545901530761c5eda90cb6e",
+    "assetId": "138039675561653",
+    "sheet": "7700c5f0482b5aa2ead25fde481f78df0cf7dd0e263ed206c3f7e5e982920eff"
   },
   "tools/blender/out/Crops/sunflower/growing.fbx": {
     "type": "Model",
-    "sha256": "ed2a560c0dbb4b28b60eea146aa32a9bd7357485a9729dcd4f1bade6cf6a7e90",
-    "assetId": "132110602322890",
-    "sheet": "3a0d5dabffba5fb8d90d923dfa1ff482a3977c8d54aba3ae61ecdd9d6d9762b0"
+    "sha256": "a5f77a56428371a711592038fb6dbe6570c638619a21ac5f421b47c524acf35d",
+    "assetId": "76901316827161",
+    "sheet": "fc65a53dec720266b218f319c8f3c3113958572e39ce40b2e055044b10de0137"
   },
   "tools/blender/out/Crops/sunflower/ready.fbx": {
     "type": "Model",
-    "sha256": "4bf10a7a2de88cdc93453aee748d77541fa003837c300a0dc7afa2c5939991ae",
-    "assetId": "101181610132192",
-    "sheet": "5ccf146481e33bf0bbe043adcf30bfef9d4f5d8cfb477c6e5c34e9a7e4eef205"
+    "sha256": "b3492b521d27d1d198e6a30747c4eb7f38422731e142ebd1d0f93e1dfb82faf7",
+    "assetId": "84512868759194",
+    "sheet": "eda5c6f1bbfe61dfcb6e0416bda2da212fc2d447e93e5257dcd5f3c91fbcd5f7"
   },
   "tools/blender/out/Crops/sunflower/sprout.fbx": {
     "type": "Model",
-    "sha256": "a6c3c90d76b0445ab11dcc28f7b28d79b684de882f601027e66ebbe2df0f857b",
-    "assetId": "77146441414466",
-    "sheet": "b71b2d2ae292bd2355445add6859b89bd4751fe29d622cbc4696335d5de5cc92"
+    "sha256": "a52d1f9dbff0dac823c7528acdbdd613c08f9d91673f0ac1624e5015d1865274",
+    "assetId": "87374440380050",
+    "sheet": "fe538d2c37b22240fc1327ba6a68bd3ea0c86f94adefc5d977303fd9773cfaf9"
   },
   "tools/blender/out/Crops/tree/growing.fbx": {
     "type": "Model",
-    "sha256": "372400b04311e5529f2009590adf21665ac116b20be1f348f7a2a7f421aab624",
-    "assetId": "131538511211344",
-    "sheet": "daf1219dc434142af1d9675c86b3b9295d67fab20350266ddfdc28198b9454b3"
+    "sha256": "e3c6512971fcce498133b1c3d829c412adb09923c449e26d37fdad58b2bb42f8",
+    "assetId": "108507925569906",
+    "sheet": "a0965b00b45f3d515329cfaf8e1743b6621cebea4757144228a8664a50e60d13"
   },
   "tools/blender/out/Crops/tree/ready.fbx": {
     "type": "Model",
-    "sha256": "fef73382e00baaf1e5a39d66a3867d9af34de61354df0777438fcdb1851369fb",
-    "assetId": "115742954245084",
-    "sheet": "7931e86cd7a4102b0d5aca8d8fd1dc35e371cd072cbe2f102642d4f8268bbab2"
+    "sha256": "61fd481cc41e037f6695a54bb9ccefa2e39071f34ea43abbf0298a9e51c65583",
+    "assetId": "86807707428244",
+    "sheet": "bbf5a7950485c378d1812bb8d62e8802aef18c91f8f7bff359ed285b73882e73"
   },
   "tools/blender/out/Crops/tree/sprout.fbx": {
     "type": "Model",
-    "sha256": "09c650ac2a8c397438be7f1a80dc6d04fd33138cb9742fcc7ff149071d55c0a6",
-    "assetId": "83576080863914",
-    "sheet": "6aa9064322ff2df9b907a1b733a7fc6a0f874b2786aa94483928c0069cf43abc"
+    "sha256": "66139336fa13b62445b2d8e3affd7c7396a3665d7dcf9e72d644daa47703f079",
+    "assetId": "102276579811665",
+    "sheet": "1ddc5e6301afd47bb54dee23f4b49ec7e5397fb62779632ab22bf55665f51a15"
   },
   "tools/blender/out/Crops/wheat/growing.fbx": {
     "type": "Model",
-    "sha256": "63ae1d09f30ed2f7a8475baf4b32d58867155cb9f7eefba9e9dcc1294ef65fab",
-    "assetId": "72040927199835",
-    "sheet": "9943174c48fcf064b726ed33d110a33d007a9603a131a6e8bbfbbf4e8f5f1140"
+    "sha256": "5deee465b1d59fffa02721e8b60d329fb083d5f4c11aa8973f16e8057cf86798",
+    "assetId": "98834921692689",
+    "sheet": "8032e5cea5ceaade12762c927c386a9fe49414f515c622259cb7d23a2f5ecca6"
   },
   "tools/blender/out/Crops/wheat/ready.fbx": {
     "type": "Model",
-    "sha256": "65e02afed915da1b78666e09dd44810b860a80fa51eec0e945825c6116d56f20",
-    "assetId": "118445541265490",
-    "sheet": "ce279e72c46ae49fc68f79c8632162945f3729af4e22f37613f6cdbaaabb0292"
+    "sha256": "cb81e33585831aa5d86d448e37075a81bc73e0094fa424ba2a775d86c909bf55",
+    "assetId": "114271839171532",
+    "sheet": "c49f5e7fc45376c5fe8323985a39dd7e38e9639c927c6eb8332a7bb279ac54b7"
   },
   "tools/blender/out/Crops/wheat/sprout.fbx": {
     "type": "Model",
-    "sha256": "2665d16b6ae7daab68fc7b9eac73a7b11f7f0e7e528c554502c0ee1b259e94fe",
-    "assetId": "122032461240598",
-    "sheet": "9f7da3a307c8963ef3dcac20083727a5d5431c92f27037cc2a40cb66bdf01df6"
+    "sha256": "719dad56eb0333d3774621232dd64b90b655a9b175efcdb7540f202f5765d468",
+    "assetId": "101510874106414",
+    "sheet": "e8687fe1a4f800dc74d23290f7fadd5b7f4c451d65b8cd4f944b5a6429005aff"
   },
   "tools/blender/out/Dressing/FencePost.fbx": {
     "type": "Model",
@@ -445,39 +445,39 @@
   },
   "tools/blender/out/Drone.fbx": {
     "type": "Model",
-    "sha256": "431cdedbff12e1e61dfb4084b10a5842a9b04dcf8fe707fbc249a8d879e9b7c7",
-    "assetId": "127013650973357",
-    "sheet": "e2996fbd3dfc9f3cdc1c4f77e30489c7d4154918e342330a6ecd44c1037204dc"
+    "sha256": "ac3c55162d6568fe934c3be38007293d18e0bcb51b4820e365793c18eadc7819",
+    "assetId": "88645045895623",
+    "sheet": "94542c9d0a82daba7c9b81f940b2df4313726452ff5f3e164f57409144e949ad"
   },
   "tools/blender/out/Hats/antenna.fbx": {
     "type": "Model",
-    "sha256": "dbc5bf5ed39d49fafe19927ed1e165b67f65faf1a1a8d61da007087c6f4314b4",
-    "assetId": "82151682305516",
-    "sheet": "c6321265d225276854554ec289f891a5e60bc084e10651b48af4eb4413afa345"
+    "sha256": "52d613ba4095bc86e04ef88f746823960f8cb86d14fd0a6a13ac721df05e9d11",
+    "assetId": "114353795164122",
+    "sheet": "4f4713343a16b12140289c457a72f09a90dbbeb3b6887a265c4b5ea0a4cd645a"
   },
   "tools/blender/out/Hats/halo.fbx": {
     "type": "Model",
-    "sha256": "04e9e94bcd85ee334c05bbd49d03656895ff1c84d963e59328b5acd5acef761a",
-    "assetId": "107319809120932",
-    "sheet": "c2d8a46829aeaffa885445bf50aa6d51f447f43e6433b91032a497fd5733c3ec"
+    "sha256": "e54c82e04ced5b66d781781b26d2998c2bad664ac151c89c933d33a68756832b",
+    "assetId": "136898675659443",
+    "sheet": "1a772d572e51fc28abf11efc92a8124249b0507ffe249a908d1b590843630fb7"
   },
   "tools/blender/out/Hats/propeller.fbx": {
     "type": "Model",
-    "sha256": "c904150566feb72cd591a8d8fd58733c6f588b414e8ef603ed0b378be04e0bb8",
-    "assetId": "80190911077752",
-    "sheet": "98c9a8ebf974723d1df5546909a84c4d0d830fe7c820d0945cbae73ee402d539"
+    "sha256": "07f6691e4ce533bf77f769dc65aa4a15af3b99e824cb777b97f4a53ea2449502",
+    "assetId": "81418382794881",
+    "sheet": "aed1a3e3c8511f6b805a3f6e8e4059bc49872c5f1001050337965fa9bc65293d"
   },
   "tools/blender/out/Hats/straw.fbx": {
     "type": "Model",
-    "sha256": "87605b2086213bf88ca378b6e9979f1817559d4b7b93f71ff33e2e77f3e06956",
-    "assetId": "115511832202528",
-    "sheet": "7bcae44a6cea01fa688508243dbd13838bbeda4cbad2631698312b7d746086ad"
+    "sha256": "e67b3d686ce472b3ee4ec6ea76657b6cdcbc5329b0f0c57edd849643b3ee7372",
+    "assetId": "82920434206403",
+    "sheet": "2e446de254b72385793f6a3a3d889d182a79433cc3e67c2457b7bbe442c3fe6f"
   },
   "tools/blender/out/Hats/tophat.fbx": {
     "type": "Model",
-    "sha256": "63e80ab7f97e6f914e25fa02b99bf449ed71cdee4952995f2e58ee7de52ea868",
-    "assetId": "105497375415674",
-    "sheet": "b8abc682b9e108661200aa90499a4903819494154aa00d1a3d841b29476172cf"
+    "sha256": "17521cb21d4a17e517031bb96a724bc9d59d9ce0dc94722af81377856189e2b1",
+    "assetId": "111005172538281",
+    "sheet": "eb050a14c44b5312a28f0a277863d1de103214a0218027db52700a9161a8c83d"
   },
   "tools/blender/out/Map/barn.fbx": {
     "type": "Model",
@@ -499,21 +499,21 @@
   },
   "tools/blender/out/Map/berry_bush.fbx": {
     "type": "Model",
-    "sha256": "24e8923e166c804062ad08c9c9d59a205efd83d55108e82f3b8a6a201eec89f6",
-    "assetId": "109076562754801",
-    "sheet": "cb0868f2bda23b0c80bd2d2cb70214aca8784329659c77556120363755de9ad0"
+    "sha256": "0fd2d846db26c44a1592db95f95bf701c67ecfcf02e8518684050ef9a951fe36",
+    "assetId": "98868583437971",
+    "sheet": "69b0f5d4c6bf682aa4a20d64b4b6da537bfb341eeafaec67e34acb865f9f18c5"
   },
   "tools/blender/out/Map/birch.fbx": {
     "type": "Model",
-    "sha256": "18dbf745753ce81505ddefdcf6ee7c95da474661af1773e35be9a7c5ea728a41",
-    "assetId": "78152909316731",
-    "sheet": "b37c100089d1f973f6b8513448a280ad3f95b870bcfeb2bd4813ed95334b040a"
+    "sha256": "dd2ddf5422e7fb3956203f51eae20e8bbc3ffe1a173362790b56d6280f71b8b7",
+    "assetId": "92539798298037",
+    "sheet": "89be0fd4ebb21089b2769b0a5de65296ac950a20ad5875eae3b0dd40767af8fc"
   },
   "tools/blender/out/Map/bush.fbx": {
     "type": "Model",
-    "sha256": "6345752348d45a3fa50bf6260639194542ad347df010be7267651e00ccdf7716",
-    "assetId": "114250176013947",
-    "sheet": "ba7278caa46beed717b210158f6612445370dcef8b96a5d9f590060d86011c9c"
+    "sha256": "953ec5b7ce51bb66145b88797935801fa4efadfab55aefe849ab8434ae737a7c",
+    "assetId": "83902743629462",
+    "sheet": "b248d61431de37c400838d458a6548ff792e437ad2c471eec9d1bd65d121777a"
   },
   "tools/blender/out/Map/cart.fbx": {
     "type": "Model",
@@ -547,21 +547,21 @@
   },
   "tools/blender/out/Map/flowers_pink.fbx": {
     "type": "Model",
-    "sha256": "4f4786c580b16f1f933231c198c3d621de1b29eec1f75f6761b46e8fe9a36a0c",
-    "assetId": "120966383178173",
-    "sheet": "11583969bb2764aae5ec443a8a8dd5f753a257930c0cdb3401b899da0f7cdfe1"
+    "sha256": "d838d3986d7508ee574a262dc532c158afb139a367f816c3224c917793f1e616",
+    "assetId": "139808358254818",
+    "sheet": "aa5939f4622082db6297c3cd31019fab6c5bf397bac0537c65e52ed827006ecd"
   },
   "tools/blender/out/Map/flowers_white.fbx": {
     "type": "Model",
-    "sha256": "d5fb5922675ed839a402d2397a3781336e8eba15cb1005c06f099fc3eb3ccd30",
-    "assetId": "124965665152371",
-    "sheet": "7d567c6602d126677d55ba8cb7e627a43de210fac58fd547e2aca6a0662428ce"
+    "sha256": "7473978899f1acd4bbc34d459249fa82f81f264d6955d4e39934993dc39b068b",
+    "assetId": "134932965741870",
+    "sheet": "c1d195486d1d8c3132490249d8ba07e50ed4d660ec4c91f52fff3b0207819bb7"
   },
   "tools/blender/out/Map/flowers_yellow.fbx": {
     "type": "Model",
-    "sha256": "c26d7c74d4fd612e810d8e1e8848fd183b2fd6e8d292f400b3fd51d65702e8b0",
-    "assetId": "133241775700000",
-    "sheet": "86b9fcef7ee3d14983d4d44e40516ce9667947877d933f4107b62b16c6147639"
+    "sha256": "05e85c6eeb9aa5fea3cc51773e8537ff6175c3fdc6ef7f3729db82728a4ed4ca",
+    "assetId": "135398811136278",
+    "sheet": "c73d52817955079a3ebbb68595c10f70a7dd8d1250ed3e14fe9608022b59ebad"
   },
   "tools/blender/out/Map/garden_bed.fbx": {
     "type": "Model",
@@ -571,9 +571,9 @@
   },
   "tools/blender/out/Map/grass_tuft.fbx": {
     "type": "Model",
-    "sha256": "8d4b3fb14e63824b455b4760316888fa8b830fb634b99678a66678c2acbb67cd",
-    "assetId": "97474936682612",
-    "sheet": "de26010bcd10134652f4c80af4123db74de2efe3eeba19f5cbc73369aa7cdeed"
+    "sha256": "fdcf164911431f451899a50891057a5b283c0cae9f3461be9556fc9d38ee43c3",
+    "assetId": "128401689241202",
+    "sheet": "238a5f8d09628e1660e82981cd22663e38b9bd6808729af91fd22d969c1b8c52"
   },
   "tools/blender/out/Map/greenhouse.fbx": {
     "type": "Model",
@@ -625,9 +625,9 @@
   },
   "tools/blender/out/Map/log.fbx": {
     "type": "Model",
-    "sha256": "0ae3482f927859f5c996f92a6378110cd4903f78477dbeb5edd4b202a405b7dc",
-    "assetId": "134794142090841",
-    "sheet": "4546234488eeae6b5261e80cc2482dfb1cb8d3232e2715ae06aabc6afaebea4f"
+    "sha256": "99563c7b4e8db0e22204e2f913c86a008c3093f4e1c8a1efb4e475d74054ae81",
+    "assetId": "114254940539566",
+    "sheet": "8b8e280dcbbef4efcfa7f3db0a6ea8063e20933dc990954e43128f1327a8a0e1"
   },
   "tools/blender/out/Map/market_stall.fbx": {
     "type": "Model",
@@ -637,15 +637,15 @@
   },
   "tools/blender/out/Map/mushroom.fbx": {
     "type": "Model",
-    "sha256": "2e06a492696435ac5e7eb044a7d528daff819e338ed50128c45e1678549413ef",
-    "assetId": "129738349384424",
-    "sheet": "2c98efb090849b5ca3833830e2d35ac475de17c163ca0c8536c66d9f5112faa0"
+    "sha256": "1e9edb1f98beabe6259eb512d3cfbbcad1c0d586749bb4e5ad38cd9a63f922ac",
+    "assetId": "75454652741223",
+    "sheet": "b057ec2d34d17b8b8d3a7a5b92a0feafb5a9449cd21cb1ac4ee4be26bb52afa7"
   },
   "tools/blender/out/Map/oak.fbx": {
     "type": "Model",
-    "sha256": "80c96dcbf1196426092c6ba021188bc078a2621bc9298a99fa5ae5734fb63ef0",
-    "assetId": "115967388429888",
-    "sheet": "8c4aa619256b3edb83dd6a64305fb07ac1fcb8519c01c80b36f79d05640860f3"
+    "sha256": "0c5c20c1c3fab8aa1c39fba7de9ed267144575af623d4dd5e7cb756e88e34cd5",
+    "assetId": "80668281975071",
+    "sheet": "80fbb661e1456854d8d30cffe288f4458b4d3fdfeb2817fc301519281159b65f"
   },
   "tools/blender/out/Map/path.fbx": {
     "type": "Model",
@@ -655,9 +655,9 @@
   },
   "tools/blender/out/Map/pine.fbx": {
     "type": "Model",
-    "sha256": "e6592ecf43d6259fe4884bc5d395ff6077688a78ee77a5275ee8f264739b7664",
-    "assetId": "73824120198809",
-    "sheet": "68eaac0ee9501f547381a424d8e657e091b2625fbd9799e960578afd9377f30e"
+    "sha256": "899e70c2d5a6f10b2c663388147d508ae5ec3407a493d06b4476efa6e5911dea",
+    "assetId": "138564466841735",
+    "sheet": "22157eacb93ba4c6c8656deb4392bb1f360e926f09b7d945ed782cf813b4bad4"
   },
   "tools/blender/out/Map/plaza.fbx": {
     "type": "Model",
@@ -739,15 +739,15 @@
   },
   "tools/blender/out/Stations/charger.fbx": {
     "type": "Model",
-    "sha256": "dda84d63fe61eb8961e5d451f7a3fea7f3310dc9a7093d06a5c8c50ae26445e1",
-    "assetId": "92008567463313",
-    "sheet": "ffccaf409cd5dedb719b2abcac6a207d584e0208c3e68a5dcc209211f1873148"
+    "sha256": "8a756922b125d8014af40d6853c65e17ce7d9b466d730f89466aa6551cd3878f",
+    "assetId": "92493072881004",
+    "sheet": "f5ee6d88fdcf6524ce9b5e8ff008ddf09554fff208794bb6846b37bb0def40f7"
   },
   "tools/blender/out/Stations/factory.fbx": {
     "type": "Model",
-    "sha256": "ddb5be419ec7154911c4dce8cf8ca7e4ebf874ce8d2c7d93ff261798f999b23c",
-    "assetId": "95190863931528",
-    "sheet": "6ea8d2e148d4dfea09082e7adec10f3c6f3c79d86da56c0d63cda8a552abcb62"
+    "sha256": "c73a5390f49f91104830c446513c1d4742dc2bcee4afddaca35f30a3d94a1250",
+    "assetId": "93086373718364",
+    "sheet": "401960cbd07d51b390be431a7917cc7729a6b125dd958c1c37158a6c8ca61bcb"
   },
   "tools/blender/out/Tiles/Soil.fbx": {
     "type": "Model",

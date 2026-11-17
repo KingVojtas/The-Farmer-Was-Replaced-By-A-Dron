@@ -32,18 +32,28 @@ HALO_GOLD = "#FFEC8C"
 
 
 def build_antenna(col):
-    pole = cylinder("HatPole", (0.6, 0.6, 0.6), 0.05, 1.2, material("M_Pole", POLE, 0.4, 1.0, variant="DroneHull"), col, sides=6)
-    set_origin(pole, (0.6, 0.0, 0.6))
-    tip = sphere("HatTip", (0.6, 1.25, 0.6), 0.15, material("M_AntennaTip", ANTENNA_RED, 0.35), col, segments=10, rings=6)
+    # A domed mount, a pole with two collars, a big glossy tip (v2).
+    m_pole = material("M_Pole", POLE, 0.4, 1.0, variant="DroneHull")
+    x, z = 0.6, 0.6
+    pole = loft("HatPole", [ring_pts((x, 0.0, z), 0.2, 0.2, 8), ring_pts((x, 0.1, z), 0.16, 0.16, 8), ring_pts((x, 0.16, z), 0.06, 0.06, 8),
+                            ring_pts((x, 1.12, z), 0.04, 0.04, 8)], m_pole, col)
+    collars = [torus(f"Collar{k}", (x, y, z), 0.06, 0.025, m_pole, col, major_segments=8, minor_segments=3) for k, y in enumerate((0.5, 0.85))]
+    pole = join([pole] + collars, "HatPole", col)
+    set_origin(pole, (x, 0.0, z))
+    tip = sphere("HatTip", (x, 1.25, z), 0.17, material("M_AntennaTip", ANTENNA_RED, 0.3), col, segments=10, rings=7)
     return [pole, tip]
 
 
 def build_straw(col):
+    # A wide brim that droops at the edge, a crown with a pinched top dent, a red band.
     m_straw = material("M_Straw", STRAW, 0.8)
-    brim = cylinder("HatBrim", (0, 0.1, 0), 1.3, 0.12, m_straw, col, sides=16)
-    crown = cylinder("HatCrownTop", (0, 0.42, 0), 0.62, 0.6, m_straw, col, sides=12)
-    band = cylinder("HatBand", (0, 0.22, 0), 0.66, 0.14, material("M_StrawBand", STRAW_BAND, 0.6), col, sides=12)
-    crown = join([crown, band], "HatCrown", col)
+    brim = loft("HatBrim", [ring_pts((0, 0.14, 0), 0.6, 0.6, 16), ring_pts((0, 0.12, 0), 1.0, 1.0, 16), ring_pts((0, 0.02, 0), 1.32, 1.32, 16),
+                            ring_pts((0, -0.04, 0), 1.3, 1.3, 16), ring_pts((0, 0.06, 0), 0.95, 0.95, 16), ring_pts((0, 0.08, 0), 0.6, 0.6, 16)], m_straw, col)
+    crown = loft("HatCrownTop", [ring_pts((0, 0.1, 0), 0.64, 0.64, 12), ring_pts((0, 0.55, 0), 0.6, 0.6, 12), ring_pts((0, 0.7, 0), 0.5, 0.42, 12),
+                                 [(0, 0.62, 0)]], m_straw, col, cap_start=False)
+    band = loft("HatBand", [ring_pts((0, 0.16, 0), 0.665, 0.665, 12), ring_pts((0, 0.32, 0), 0.655, 0.655, 12)], material("M_StrawBand", STRAW_BAND, 0.6), col, cap_start=False, cap_end=False)
+    bow = loft("Bow", [ring_pts((0.5, 0.24, 0.45), 0.12, 0.05, 6), [(0.72, 0.18, 0.62)]], band.data.materials[0], col)
+    crown = join([crown, band, bow], "HatCrown", col)
     set_origin(brim, (0, 0, 0))
     set_origin(crown, (0, 0, 0))
     return [brim, crown]
@@ -51,21 +61,36 @@ def build_straw(col):
 
 def build_propeller(col):
     m_cap = material("M_Cap", CAP_BLUE, 0.5)
-    cap = sphere("HatCap", (0, 0.15, 0), 0.65, m_cap, col, segments=12, rings=6, scale=(1, 0.55, 1))
-    stem = cylinder("HatStem", (0, 0.6, 0), 0.05, 0.35, material("M_Stem", STEM, 0.3, 1.0), col, sides=6)
+    # A beanie in 8 panels (alternating seams pushed in) with a rolled rim and a button stem.
+    rings = [ring_pts((0, 0.0, 0), 0.7, 0.7, 16), ring_pts((0, 0.1, 0), 0.72, 0.72, 16)]
+    for y, r in ((0.28, 0.64), (0.44, 0.5), (0.54, 0.3)):
+        rings.append(ring_pts((0, y, 0), r, r, 16, wobble=lambda i: 1.0 - 0.05 * (i % 2)))
+    rings.append([(0, 0.58, 0)])
+    cap = loft("HatCap", rings, m_cap, col)
+    stem = loft("HatStem", [ring_pts((0, 0.55, 0), 0.06, 0.06, 6), ring_pts((0, 0.8, 0), 0.05, 0.05, 6), ring_pts((0, 0.84, 0), 0.1, 0.1, 6)], material("M_Stem", STEM, 0.3, 1.0), col)
     cap = join([cap, stem], "HatCap", col)
     set_origin(cap, (0, 0, 0))
-    # The blade spins in game: a separate part named Rotor..., origin at the hub, modelled flat.
-    blade = box("RotorBlade", (0, 0.78, 0), (1.8, 0.06, 0.28), material("M_Blade", BLADE_GOLD, 0.45), col)
-    set_origin(blade, (0, 0.78, 0))
+    # The blade spins in game: a separate part named Rotor..., origin at the hub, modelled flat;
+    # two tapered, pitched blades round a hub.
+    pieces = [loft("Hub", [ring_pts((0, 0.82, 0), 0.1, 0.1, 6), ring_pts((0, 0.92, 0), 0.08, 0.08, 6)], material("M_Blade", BLADE_GOLD, 0.45), col)]
+    for d in (1, -1):
+        pts = [(d * x, 0.87, 0) for x in (0.05, 0.35, 0.75, 0.92)]
+        pieces.append(tube(f"Blade{d}", pts, [0.1, 0.17, 0.14, 0.0], pieces[0].data.materials[0], col, section=SEC_BLADE, roll=math.radians(14)))
+    blade = join(pieces, "RotorBlade", col)
+    set_origin(blade, (0, 0.87, 0))
     return [cap, blade]
 
 
 def build_tophat(col):
     m_top = material("M_TopHat", TOP_GREY, 0.55)
-    brim = cylinder("HatBrim", (0, 0.06, 0), 0.95, 0.1, m_top, col, sides=16)
-    crown = cylinder("HatCrownTop", (0, 0.65, 0), 0.6, 1.1, m_top, col, sides=14)
-    band = cylinder("HatBand", (0, 0.24, 0), 0.63, 0.16, material("M_TopBand", TOP_BAND, 0.5), col, sides=14)
+    # A brim curled up at the sides and a crown that flares slightly toward the top.
+    def brim_ring(y, r, curl):
+        return [(math.cos(a) * r, y + curl * abs(math.cos(a)) ** 2, math.sin(a) * r * 0.9) for a in (i / 16 * 2 * math.pi for i in range(16))]
+
+    brim = loft("HatBrim", [brim_ring(0.1, 0.6, 0.0), brim_ring(0.08, 0.98, 0.14), brim_ring(0.0, 0.98, 0.14), brim_ring(0.02, 0.6, 0.0)], m_top, col)
+    crown = loft("HatCrownTop", [ring_pts((0, 0.06, 0), 0.56, 0.5, 14), ring_pts((0, 0.4, 0), 0.565, 0.505, 14), ring_pts((0, 1.15, 0), 0.59, 0.53, 14),
+                                 ring_pts((0, 1.22, 0), 0.57, 0.51, 14), [(0, 1.23, 0)]], m_top, col, cap_start=False)
+    band = loft("HatBand", [ring_pts((0, 0.12, 0), 0.575, 0.515, 14), ring_pts((0, 0.32, 0), 0.565, 0.505, 14)], material("M_TopBand", TOP_BAND, 0.5), col, cap_start=False, cap_end=False)
     crown = join([crown, band], "HatCrown", col)
     set_origin(brim, (0, 0, 0))
     set_origin(crown, (0, 0, 0))
@@ -73,21 +98,8 @@ def build_tophat(col):
 
 
 def build_halo(col):
-    # A floating ring 1.1 studs above the body (game Y); torus axis = game Y = Blender Z.
-    bpy.ops.mesh.primitive_torus_add(
-        major_segments=16,
-        minor_segments=4,
-        major_radius=0.85,
-        minor_radius=0.07,
-        location=g(0, 1.1, 0),
-    )
-    ring = bpy.context.active_object
-    ring.name = "HatHalo"
-    ring.data.name = "SM_HatHalo"
-    ring.data.materials.append(material("M_Halo", HALO_GOLD, 0.25, 1.0))
-    for c in ring.users_collection:
-        c.objects.unlink(ring)
-    col.objects.link(ring)
+    # A floating gold ring 1.1 studs above the body, faceted with a gentle twist.
+    ring = torus("HatHalo", (0, 1.1, 0), 0.85, 0.08, material("M_Halo", HALO_GOLD, 0.25, 1.0), col, major_segments=24, minor_segments=5, twist=2 * math.pi / 24)
     set_origin(ring, (0, 0, 0))
     return [ring]
 

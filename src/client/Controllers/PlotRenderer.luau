@@ -3133,12 +3133,47 @@ local function decorateStation(plotVisual: PlotVisual, station: Instance)
 			plotVisual.chimneyTop = chimney.Position + Vector3.new(0, chimney.Size.Y / 2, 0)
 		end
 	end
+	-- The server's pad is Neon; locally it goes dark while idle (restored on teardown).
+	local function darkenChargerPad()
+		if plotVisual.chargerPad == nil then
+			plotVisual.chargerPad =
+				{ part = station, material = station.Material, color = station.Color, size = station.Size }
+			station.Material = Enum.Material.SmoothPlastic
+			station.Color = PAD_IDLE
+		end
+	end
 	local asset = AssetLibrary.station(kind)
 	if asset ~= nil then
 		asset:PivotTo(top)
 		asset.Parent = plotVisual.folder
 		if kind == "factory" then
 			useFactoryParts(asset)
+			-- Its biofluid ("Slit") and work "Lamp" light up while the drone works (PlotDressing).
+			local slit = asset:FindFirstChild("Slit", true)
+			local lamp = asset:FindFirstChild("Lamp", true)
+			plotVisual.dressing.setFactoryLights(
+				if slit ~= nil and slit:IsA("BasePart") then slit else nil,
+				if lamp ~= nil and lamp:IsA("BasePart") then lamp else nil
+			)
+		elseif kind == "charger" then
+			-- Its light guides (Ring1..4), PylonLight and Conduit glow and pulse cyan while
+			-- charging, exactly like the procedural rings (refreshStations / pulseRings).
+			for _, descendant in asset:GetDescendants() do
+				local name = descendant.Name
+				if
+					descendant:IsA("BasePart")
+					and (
+						string.match(name, "^Ring%d+$") ~= nil
+						or name == "PylonLight"
+						or string.sub(name, 1, 7) == "Conduit"
+					)
+				then
+					descendant.Material = Enum.Material.SmoothPlastic
+					descendant.Color = STATION_IDLE
+					table.insert(plotVisual.chargerGlow, descendant)
+				end
+			end
+			darkenChargerPad()
 		end
 		return
 	end
@@ -3210,13 +3245,7 @@ local function decorateStation(plotVisual: PlotVisual, station: Instance)
 		)
 		add(pylonLight, CFrame.new(-2.6, 2.4, -2.6))
 		table.insert(plotVisual.chargerGlow, pylonLight)
-		-- The server's pad is Neon; locally it goes dark while idle (restored on teardown).
-		if station:IsA("BasePart") and plotVisual.chargerPad == nil then
-			plotVisual.chargerPad =
-				{ part = station, material = station.Material, color = station.Color, size = station.Size }
-			station.Material = Enum.Material.SmoothPlastic
-			station.Color = PAD_IDLE
-		end
+		darkenChargerPad()
 	end
 end
 

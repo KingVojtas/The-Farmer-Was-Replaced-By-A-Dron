@@ -20,7 +20,8 @@
 	set by the server from the pass) adds gold trim, never a text prefix.
 	setStation("factory") lights the biofluid slit (Neon, flickering) and the amber lamp (pulsing)
 	while the drone deposits or refines; any other value returns them to idle: dark, no Neon. The charger's ring pulse is
-	PlotRenderer's, since it owns the rings.
+	PlotRenderer's, since it owns the rings. An artist factory (Assets.Stations.factory) brings its
+	own "Slit" and "Lamp": PlotRenderer hands them over with setFactoryLights, and they work the same.
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -36,6 +37,7 @@ export type Dressing = {
 	setLevel: (level: string) -> (),
 	rebuild: () -> (),
 	setStation: (kind: string?) -> (),
+	setFactoryLights: (slit: BasePart?, lamp: BasePart?) -> (),
 	destroy: () -> (),
 }
 
@@ -121,6 +123,9 @@ function PlotDressing.new(plot: Model, folder: Folder): Dressing
 	local root: Folder? = nil
 	local slit: BasePart? = nil
 	local lamp: BasePart? = nil
+	-- An artist factory's own lights (PlotRenderer owns those parts; used when no procedural one).
+	local artistSlit: BasePart? = nil
+	local artistLamp: BasePart? = nil
 	local stationTweens: { Tween } = {}
 	local activeStation: string? = nil
 	local pending = false
@@ -288,7 +293,7 @@ function PlotDressing.new(plot: Model, folder: Folder): Dressing
 		end
 		table.clear(stationTweens)
 		-- Idle: dark and opaque, no Neon (ART-6).
-		local s, l = slit, lamp
+		local s, l = slit or artistSlit, lamp or artistLamp
 		if s ~= nil then
 			s.Material = Enum.Material.SmoothPlastic
 			s.Color = SLIT_IDLE
@@ -303,7 +308,7 @@ function PlotDressing.new(plot: Model, folder: Folder): Dressing
 
 	local function applyStation()
 		stopStation()
-		local s, l = slit, lamp
+		local s, l = slit or artistSlit, lamp or artistLamp
 		if activeStation ~= "factory" or s == nil or l == nil then
 			return
 		end
@@ -385,6 +390,11 @@ function PlotDressing.new(plot: Model, folder: Folder): Dressing
 				activeStation = kind
 				applyStation()
 			end
+		end,
+		setFactoryLights = function(newSlit: BasePart?, newLamp: BasePart?)
+			artistSlit = newSlit
+			artistLamp = newLamp
+			applyStation()
 		end,
 		destroy = function()
 			for _, connection in connections do

@@ -57,6 +57,7 @@ check.
 | BUG-25 | P3 | PLAUSIBLE | FIXED (2026-11-12), needs a touch device | `Components.hover` can stay at 1.04 on touch (no MouseLeave) and after press-drag-release |
 | BUG-26 | P0 | CONFIRMED | FIXED (2026-11-12), verified in Studio | `rojo build` drops the Baseplate's `Position`: it sits at the origin, top at y = 8, and buries every farm and drone |
 | BUG-27 | P3 | CONFIRMED | FIXED (2026-11-12), verified in Studio | Control Mode never takes the camera back if another script hands it to the default scripts mid-session |
+| BUG-28 | P2 | CONFIRMED | FIXED (2026-11-17), needs Studio | With the artist station models in `assets/`, the charger never lights / pulses while charging (and its server pad glows cyan at the base all the time), and the factory's biofluid and work lamp never light while working |
 
 Not bugs, but missing content (this is what `/assets` is for): every UI icon is an emoji
 fallback (`IconAtlas.assetId = 0`, only `hay` / `wheat` have art), `assets/` contains no models
@@ -452,6 +453,22 @@ wallet).
 * **Fix:** the per-frame render guard re-takes the camera while Entering / Controlling and,
   once arrived, puts it back on the bird's-eye view.
 
+### BUG-28: the artist stations never light up
+
+**Status: FIXED (2026-11-17), needs a Studio check (charge on the pad, deposit at the factory).**
+
+* **Where:** `PlotRenderer.decorateStation` returned right after placing an artist station model
+  (`Assets.Stations.charger` / `factory`, in the game since 2026-11-13). Only the procedural
+  stand-ins put their rings into `chargerGlow`, darkened the server's Neon pad, and gave
+  `PlotDressing` a slit and a lamp. So with the real models the charger rings and pylon light
+  stayed dark while charging, the server pad's Neon showed as a cyan strip under the base plate
+  all the time, and the factory's biofluid and work lamp never lit while working.
+* **Fix:** the asset branch collects the artist charger's `Ring1..4`, `PylonLight` and `Conduit`
+  parts into `chargerGlow` (so `refreshStations` / `pulseRings` light and pulse them exactly like
+  the procedural rings) and darkens the pad; for the factory it hands `Slit` and `Lamp` to the new
+  `PlotDressing.setFactoryLights`, which `applyStation` / `stopStation` use when the dressing has
+  no procedural slit / lamp of its own.
+
 ## Fix log (`/bugfix`, 2026-11-11)
 
 | ID | Files | Verified by |
@@ -476,6 +493,7 @@ wallet).
 | BUG-26 (2026-11-12) | `default.project.json` (CFrame, not Position) | `tests/spec/Project.spec.luau` (2) + Studio MCP playtest |
 | BUG-24/25 (2026-11-12) | `UI/Theme` (Skin hover/press tint), `UI/Components` (`hover`) | review + Studio |
 | BUG-27 (2026-11-12) | `Controllers/ControlModeController` (render guard) | `tools/studio_smoke.py` screenshots |
+| BUG-28 (2026-11-17) | `Controllers/PlotRenderer` (`decorateStation`: artist Ring1..4 / PylonLight / Conduit into `chargerGlow`, pad darkened; factory Slit / Lamp handed over), `Visuals/PlotDressing` (`setFactoryLights`) | review + `lune run tests/run`; needs a Studio charge / deposit check |
 
 ## Studio playtest checklist (everything marked "needs Studio")
 

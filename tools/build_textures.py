@@ -1,8 +1,9 @@
 """
 build_textures.py - procedural PBR texture sets for Drone Farm (ASSETS-3 / ASSETS-5).
 
-    python tools/build_textures.py            # all sets
-    python tools/build_textures.py soil       # one family: soil | hardsurface | crops
+    python tools/build_textures.py            # hardsurface + crops
+    python tools/build_textures.py crops      # one family: hardsurface | crops
+    (soil + detail: tools/blender/textures.py since 2026-11-17; the old sets: add --legacy)
 
 Pure Pillow (no numpy). Every map is SEAMLESS (periodic noise: a small random grid tiled
 3 x 3, upscaled bicubic, centre cropped) and palette-true to docs/ART_BIBLE.md §1.4 / §2.4.
@@ -510,10 +511,18 @@ FAMILIES = {
     "crops": lambda: crops(os.path.join(OUT, "crops")),
 }
 
+# soil + detail are made by tools/blender/textures.py since 2026-11-17 (1024², Blender-baked).
+# These 512² Pillow versions only run on request with --legacy, so a plain run can't overwrite them.
+SUPERSEDED = ("soil", "detail")
+
 if __name__ == "__main__":
-    wanted = sys.argv[1:] or list(FAMILIES)
+    args = [a for a in sys.argv[1:] if a != "--legacy"]
+    wanted = args or [f for f in FAMILIES if f not in SUPERSEDED]
     for family in wanted:
         if family not in FAMILIES:
             raise SystemExit(f"unknown family {family!r}: {', '.join(FAMILIES)}")
+        if family in SUPERSEDED and "--legacy" not in sys.argv:
+            raise SystemExit(f"{family}: made by tools/blender/textures.py now (blender -b -P tools/blender/textures.py -- {family}); "
+                             "pass --legacy to write the old 512² Pillow set instead")
         print(family)
         FAMILIES[family]()

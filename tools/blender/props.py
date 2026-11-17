@@ -98,43 +98,84 @@ TRUNK, BIRCH_BARK = "#7A5034", "#E8E4DA"
 LEAF_A, LEAF_B, LEAF_C, PINE, BIRCH_LEAF = "#5E9C48", "#6FB052", "#4E8A3C", "#3E7A47", "#8DC461"
 
 
+def lump(name, center, radius, mat, col, seed, scale=(1.0, 1.0, 1.0)):
+    """v2 foliage: a 7 x 4 faceted sphere, hand-cut (every vertex pushed in or out)."""
+    obj = sphere(name, center, radius, mat, col, segments=7, rings=4, scale=scale)
+    rng = random.Random(seed)
+    for v in obj.data.vertices:
+        v.co *= rng.uniform(0.86, 1.12)
+    obj.data.update()
+    return obj
+
+
+def trunk_loft(name, h, r0, r1, mat, col, sides=7, lean=(0.0, 0.0), flare=1.45):
+    """A trunk with a root flare, tapering to r1 at height h, leaning by `lean` (x, z) at the top."""
+    lx, lz = lean
+    rings = [ring_pts((0, -0.1, 0), r0 * flare, r0 * flare, sides, wobble=lambda i: 1.0 + 0.12 * (i % 2)),
+             ring_pts((lx * 0.15, h * 0.12, lz * 0.15), r0, r0, sides, 0.2),
+             ring_pts((lx * 0.6, h * 0.6, lz * 0.6), (r0 + r1) / 2, (r0 + r1) / 2, sides, 0.4),
+             ring_pts((lx, h, lz), r1, r1, sides, 0.6)]
+    return loft(name, rings, mat, col, cap_start=False)
+
+
 def oak(col):
-    trunk = collide(cylinder("Trunk", (0, 1.8, 0), 0.5, 3.6, M("Trunk", TRUNK), col, sides=7))
-    crown = [
-        blob("Crown1", (0, 5.4, 0), 2.5, M("LeafA", LEAF_A), col, 1),
-        blob("Crown2", (1.6, 4.7, 0.6), 1.8, M("LeafB", LEAF_B), col, 2),
-        blob("Crown3", (-1.4, 4.9, -0.7), 1.9, M("LeafB", LEAF_B), col, 3),
-    ]
-    return [trunk, join(crown[:1], "Crown", col), join(crown[1:], "Crown_Light", col)]
+    trunk = collide(trunk_loft("Trunk", 4.4, 0.5, 0.34, M("Trunk", TRUNK), col, lean=(0.15, -0.1)))
+    branches = [tube(f"Branch{k}", [(0.1, 2.8 + k * 0.5, 0), (d[0] * 1.5, 4.0 + k * 0.4, d[1] * 1.5)], [0.2, 0.1], M("Trunk", TRUNK), col, sides=5)
+                for k, d in enumerate(((1, 0.4), (-0.8, -0.6)))]
+    trunk = join([trunk] + branches, "Trunk", col)
+    collide(trunk)
+    dark = [lump("C1", (0.1, 5.3, 0), 2.4, M("LeafA", LEAF_A), col, 1, (1, 0.85, 1)),
+            lump("C2", (1.7, 4.6, 0.7), 1.7, M("LeafA", LEAF_A), col, 2),
+            lump("C3", (-1.6, 4.8, -0.6), 1.8, M("LeafA", LEAF_A), col, 3),
+            lump("C4", (-0.4, 4.4, 1.6), 1.5, M("LeafA", LEAF_A), col, 4)]
+    light = [lump("L1", (0.5, 6.6, -0.3), 1.6, M("LeafB", LEAF_B), col, 5),
+             lump("L2", (-1.0, 6.0, 0.6), 1.3, M("LeafB", LEAF_B), col, 6)]
+    return [trunk, join(dark, "Crown", col), join(light, "Crown_Light", col)]
 
 
 def pine(col):
-    trunk = collide(cylinder("Trunk", (0, 1.0, 0), 0.4, 2.0, M("Trunk", TRUNK), col, sides=6))
-    tiers = [cone(f"Tier{k}", (0, 2.4 + k * 1.9, 0), r, h, M("Pine", PINE), col, sides=7)
-             for k, (r, h) in enumerate(((2.7, 3.2), (2.1, 2.8), (1.4, 2.4)))]
+    trunk = collide(trunk_loft("Trunk", 2.6, 0.4, 0.28, M("Trunk", TRUNK), col, sides=6, flare=1.3))
+    tiers = []
+    for k, (y0, r, h) in enumerate(((1.8, 2.8, 2.6), (3.3, 2.25, 2.4), (4.7, 1.7, 2.2), (6.0, 1.05, 1.9))):
+        # a drooping skirt with a jagged (alternating) hem, then the cone up to its tip
+        hem = ring_pts((0, y0, 0), r, r, 10, k * 0.3, wobble=lambda i: 1.0 - 0.16 * (i % 2))
+        shoulder = ring_pts((0, y0 + 0.45, 0), r * 0.72, r * 0.72, 10, k * 0.3)
+        tiers.append(loft(f"Tier{k}", [hem, shoulder, [(0.05 * k, y0 + h, 0)]], M("Pine", PINE), col))
     return [trunk, join(tiers, "Needles", col)]
 
 
 def birch(col):
     bark = M("BirchBark", BIRCH_BARK)
-    trunk = collide(cylinder("Trunk", (0, 2.6, 0), 0.3, 5.2, bark, col, sides=6))
-    marks = [box(f"Mark{k}", (0.0, 1.2 + k * 1.1, -0.29), (0.32, 0.12, 0.06), M("BirchMark", "#3A3532"), col) for k in range(4)]
-    crown = [blob("Crown1", (0.2, 6.2, 0), 1.9, M("BirchLeaf", BIRCH_LEAF), col, 4, (1, 1.25, 1)),
-             blob("Crown2", (-0.8, 5.3, 0.4), 1.4, M("BirchLeaf", BIRCH_LEAF), col, 5)]
+    trunk = tube("Trunk", [(0, -0.1, 0), (0.12, 1.8, 0.05), (-0.05, 3.6, -0.05), (0.15, 5.4, 0.1)], [0.36, 0.3, 0.26, 0.2], bark, col, sides=6, cap=False)
+    branch = tube("Branch", [(0.05, 3.9, 0), (0.9, 4.9, 0.3)], [0.12, 0.06], bark, col, sides=4)
+    trunk = collide(join([trunk, branch], "Trunk", col))
+    rng = random.Random(9)
+    marks = []
+    for k in range(6):  # dark lenticel bands wrapping part of the trunk
+        y = 0.8 + k * 0.75
+        a = rng.uniform(0, 2 * math.pi)
+        r = 0.32 - y * 0.02
+        marks.append(box(f"Mark{k}", (math.cos(a) * r, y, math.sin(a) * r), (0.34, 0.08, 0.34), M("BirchMark", "#3A3532"), col))
+    crown = [lump("C1", (0.3, 6.3, 0.1), 1.8, M("BirchLeaf", BIRCH_LEAF), col, 4, (1, 1.3, 1)),
+             lump("C2", (-0.7, 5.3, 0.5), 1.3, M("BirchLeaf", BIRCH_LEAF), col, 5),
+             lump("C3", (0.9, 5.0, -0.4), 1.1, M("BirchLeaf", BIRCH_LEAF), col, 6)]
     return [trunk, join(marks, "Trunk_Marks", col), join(crown, "Crown", col)]
 
 
 def bush(col):
-    leaves = [blob(f"B{k}", c, r, M("Bush", LEAF_C), col, 10 + k, (1, 0.8, 1))
-              for k, (c, r) in enumerate((((0, 0.8, 0), 1.0), ((0.8, 0.6, 0.3), 0.75), ((-0.7, 0.6, -0.2), 0.7)))]
+    leaves = [lump(f"B{k}", c, r, M("Bush", LEAF_C), col, 10 + k, (1, 0.8, 1))
+              for k, (c, r) in enumerate((((0, 0.85, 0), 1.0), ((0.85, 0.6, 0.3), 0.75), ((-0.75, 0.6, -0.2), 0.72), ((0.1, 0.55, -0.8), 0.65)))]
     return [join(leaves, "Bush", col)]
 
 
 def berry_bush(col):
     parts = bush(col)
     rng = random.Random(21)
-    berries = [sphere(f"Berry{k}", (rng.uniform(-0.9, 0.9), rng.uniform(0.6, 1.4), rng.uniform(-1.0, -0.5)), 0.14,
-                      M("Berry", "#D9434A"), col, segments=5, rings=3) for k in range(7)]
+    berries = []
+    for k in range(9):  # clusters on the outside of the bush, mostly on the camera side
+        a = rng.uniform(-0.3, math.pi + 0.3)
+        x, z, y = math.cos(a) * 1.0, math.sin(a) * 0.95 - 0.1, rng.uniform(0.55, 1.35)
+        berries.append(sphere(f"Berry{k}", (x, y, z), 0.15, M("Berry", "#D9434A"), col, segments=5, rings=3))
     return parts + [join(berries, "Bush_Berries", col)]
 
 
@@ -153,34 +194,55 @@ def flowers(color_name, hexc, seed):
     def build(col):
         rng = random.Random(seed)
         stems, heads = [], []
-        for k in range(6):
+        stem_m, petal_m = M("Stem", "#4F8A3C"), M("Petal" + color_name, hexc)
+        for k in range(7):
             x, z = rng.uniform(-0.9, 0.9), rng.uniform(-0.9, 0.9)
-            h = rng.uniform(0.5, 0.9)
-            stems.append(box(f"Stem{k}", (x, h / 2, z), (0.06, h, 0.06), M("Stem", "#4F8A3C"), col))
-            heads.append(sphere(f"Head{k}", (x, h + 0.08, z), 0.16, M("Petal" + color_name, hexc), col, segments=5, rings=3))
+            h = rng.uniform(0.5, 0.95)
+            tip = (x + rng.uniform(-0.1, 0.1), h, z + rng.uniform(-0.1, 0.1))
+            stems.append(tube(f"Stem{k}", [(x, -0.02, z), tip], [0.035, 0.03], stem_m, col, sides=4, cap=False))
+            if k % 2 == 0:
+                stems.append(leaf(f"Leaf{k}", (x, 0.12, z), (x + 0.35, 0.35, z + 0.1), 0.08, stem_m, col, bend=0.2, segments=1, profile=[1.0, 0.0]))
+            phase = rng.uniform(0, 2 * math.pi)
+            for i in range(5):  # five petals round a button centre, facing up
+                a = phase + i / 5 * 2 * math.pi
+                heads.append(leaf(f"P{k}{i}", (tip[0] + math.cos(a) * 0.04, tip[1] + 0.02, tip[2] + math.sin(a) * 0.04),
+                                  (tip[0] + math.cos(a) * 0.24, tip[1] + 0.06, tip[2] + math.sin(a) * 0.24), 0.08, petal_m, col, bend=0.05, segments=1, profile=[1.0, 0.0]))
         return [join(stems, "Stems", col), join(heads, "Flowers", col)]
     return build
 
 
 def grass_tuft(col):
     rng = random.Random(31)
-    blades = [wedge(f"Blade{k}", (rng.uniform(-0.3, 0.3), 0, rng.uniform(-0.3, 0.3)),
-                    (rng.uniform(-0.7, 0.7), rng.uniform(0.6, 1.1), rng.uniform(-0.7, 0.7)), 0.18, 0.05, M("Tuft", "#6DA84C"), col)
-              for k in range(7)]
+    blades = []
+    for k in range(9):
+        a = k / 9 * 2 * math.pi + rng.uniform(-0.2, 0.2)
+        r0, reach, h = rng.uniform(0.05, 0.25), rng.uniform(0.4, 0.8), rng.uniform(0.6, 1.15)
+        blades.append(leaf(f"Blade{k}", (math.cos(a) * r0, -0.03, math.sin(a) * r0), (math.cos(a) * reach, h, math.sin(a) * reach), 0.09,
+                           M("Tuft", "#6DA84C"), col, bend=0.2, segments=2, profile=[1.0, 0.7, 0.0]))
     return [join(blades, "Tuft", col)]
 
 
 def log(col):
-    body = collide(cylinder("Log", (0, 0.42, 0), 0.42, 2.8, M("Bark", "#7A5034"), col, sides=8, axis="X"))
-    ends = [cylinder(f"End{s}", (s * 1.41, 0.42, 0), 0.36, 0.04, M("Rings", "#D9B27A"), col, sides=8, axis="X") for s in (-1, 1)]
+    bark = M("Bark", "#7A5034")
+    rings = [[(-1.42, 0.42 + math.sin(a) * 0.4, math.cos(a) * 0.4) for a in (i / 8 * 2 * math.pi for i in range(8))],
+             [(0.0, 0.42 + math.sin(a) * 0.43, math.cos(a) * 0.43) for a in (i / 8 * 2 * math.pi + 0.2 for i in range(8))],
+             [(1.42, 0.42 + math.sin(a) * 0.38, math.cos(a) * 0.38) for a in (i / 8 * 2 * math.pi for i in range(8))]]
+    body = loft("Log", rings, bark, col)
+    stub = tube("Stub", [(0.3, 0.75, 0.1), (0.55, 1.15, 0.25)], [0.12, 0.07], bark, col, sides=5)
+    body = collide(join([body, stub], "Log", col))
+    ends = [cylinder(f"End{s}", (s * 1.43, 0.42, 0), 0.34 if s > 0 else 0.36, 0.04, M("Rings", "#D9B27A"), col, sides=8, axis="X") for s in (-1, 1)]
     return [body, join(ends, "Log_Ends", col)]
 
 
 def mushroom(col):
-    stem = cylinder("Stem", (0, 0.25, 0), 0.12, 0.5, M("MushStem", "#EFE6D2"), col, sides=6)
-    cap = sphere("Cap", (0, 0.55, 0), 0.38, M("MushCap", "#D9434A"), col, segments=8, rings=4, scale=(1, 0.55, 1))
-    spots = [sphere(f"Spot{k}", (math.cos(a) * 0.22, 0.7, math.sin(a) * 0.22), 0.06, M("MushSpot", "#FFFFFF"), col, segments=4, rings=3)
-             for k, a in enumerate((0.3, 2.2, 4.1))]
+    stem = loft("Stem", [ring_pts((0, -0.02, 0), 0.16, 0.16, 6), ring_pts((0, 0.3, 0), 0.11, 0.11, 6, 0.3), ring_pts((0, 0.55, 0), 0.13, 0.13, 6)],
+                M("MushStem", "#EFE6D2"), col, cap_start=False)
+    cap = loft("Cap", [ring_pts((0, 0.5, 0), 0.3, 0.3, 10), ring_pts((0, 0.52, 0), 0.46, 0.46, 10), ring_pts((0, 0.64, 0), 0.44, 0.44, 10),
+                       ring_pts((0, 0.8, 0), 0.3, 0.3, 10, 0.3), [(0, 0.86, 0)]], M("MushCap", "#D9434A"), col)
+    spots = []
+    for k, (a, r, y) in enumerate(((0.3, 0.3, 0.74), (2.2, 0.32, 0.73), (4.1, 0.28, 0.75), (1.2, 0.1, 0.86))):
+        cx, cz = math.cos(a) * r, math.sin(a) * r
+        spots.append(loft(f"Spot{k}", [ring_pts((cx, y - 0.01, cz), 0.07, 0.07, 5), ring_pts((cx, y + 0.025, cz), 0.05, 0.05, 5)], M("MushSpot", "#FFFFFF"), col))
     return [stem, cap, join(spots, "Cap_Spots", col)]
 
 
