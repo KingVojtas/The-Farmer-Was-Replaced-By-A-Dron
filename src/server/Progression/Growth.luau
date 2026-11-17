@@ -51,7 +51,8 @@ export type Env = {
 }
 
 -- What a tick changed (the live farm republishes attributes only for these).
-export type Change = { state: boolean, watered: boolean, progress: boolean }
+-- `exhausted`: dig exhaustion just ended (the tile's Exhausted attribute turns false).
+export type Change = { state: boolean, watered: boolean, progress: boolean, exhausted: boolean }
 
 local GRID = GameConfig.Grid
 local GRASS = GameConfig.Grass
@@ -107,8 +108,8 @@ function Growth.acceptsWater(tile: TileData): boolean
 	return crop ~= nil and crop.noWater ~= true and (tile.state == "planted" or tile.state == "growing")
 end
 
--- `_weather` is kept for the callers' signature: rain no longer waters on planting.
-function Growth.plant(tile: TileData, cropId: string, _weather: Weather)
+-- Rain doesn't water on planting (it soaks crops over time: advance), so no weather here.
+function Growth.plant(tile: TileData, cropId: string)
 	tile.crop = cropId
 	tile.state = "planted"
 	tile.progress = 0
@@ -192,13 +193,14 @@ end
 
 -- Advances one tile by `dt` seconds. Never yields.
 function Growth.advance(tile: TileData, dt: number, env: Env): Change
-	local change: Change = { state = false, watered = false, progress = false }
+	local change: Change = { state = false, watered = false, progress = false, exhausted = false }
 	if dt <= 0 then
 		return change
 	end
 
 	if Growth.isExhausted(tile) then
 		tile.exhausted = math.max(0, (tile.exhausted or 0) - dt)
+		change.exhausted = tile.exhausted <= 0
 		if tile.state == "empty" then
 			tile.bareTime = 0 -- dug-up soil stays bare until it recovers
 			return change
@@ -207,7 +209,7 @@ function Growth.advance(tile: TileData, dt: number, env: Env): Change
 	if tile.state == "empty" then
 		tile.bareTime += dt
 		if tile.bareTime >= GRASS.RegrowDelay then
-			Growth.plant(tile, CropConfig.WildCrop, env.weather)
+			Growth.plant(tile, CropConfig.WildCrop)
 			change.state = true
 			change.watered = true
 			change.progress = true

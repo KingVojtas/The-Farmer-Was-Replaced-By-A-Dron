@@ -38,9 +38,45 @@ GameConfig.Grid = {
 	TileSize = 6, -- studs (X and Z)
 	TileGap = 0.4, -- studs between tiles
 	TileHeight = 0.6,
+	--[[
+		Plot slots: the farm village. The spawn village sits in the middle of a 5 x 5 grid of farms
+		(slot centres 120 studs apart in x, 128 in z, so a full 10 x 10 field plus its zone never
+		touches a neighbour and 40+ stud roads run between them). Slots fill in this order: the
+		8 farms right around the village first (N, S, E, W, then the corners), then the outer
+		ring. { x, z } = the plot centre GridService builds the field around. The map
+		(tools/build_map.luau) keeps every slot free, so a server needs MaxPlayers <= #PlotSlots.
+	]]
+	PlotSlots = {
+		{ 0, -128 },
+		{ 0, 128 },
+		{ 120, 0 },
+		{ -120, 0 },
+		{ 120, -128 },
+		{ -120, -128 },
+		{ 120, 128 },
+		{ -120, 128 },
+		{ 0, -256 },
+		{ 0, 256 },
+		{ 240, 0 },
+		{ -240, 0 },
+		{ 120, -256 },
+		{ -120, -256 },
+		{ 120, 256 },
+		{ -120, 256 },
+		{ 240, -128 },
+		{ -240, -128 },
+		{ 240, 128 },
+		{ -240, 128 },
+		{ 240, -256 },
+		{ -240, -256 },
+		{ 240, 256 },
+		{ -240, 256 },
+	},
+	-- Only for slots past #PlotSlots (a server bigger than the map): the old rows, far north.
 	PlotSpacing = 90, -- distance between neighbouring plot centers
 	PlotsPerRow = 4,
 	PlotRowOffset = 60, -- first row of plots starts this far from the world origin (keeps spawn clear)
+	OverflowOffset = 900, -- overflow rows start this far north of the map
 	GrowthTickSeconds = 0.25, -- how often the server advances crop growth
 	SproutProgress = 0.15, -- growth progress at which "planted" becomes "growing"
 	-- Rain doesn't replace watering: a dry crop is watered after this much rain, so fast crops
@@ -109,7 +145,6 @@ GameConfig.Grass = {
 	NewTilesGrown = true,
 }
 
--- dig() (Bones & Fossils research): on bare soil or wild grass, a chance to find a fossil.
 -- Collision groups (Server.Services.PlotGuardService registers them; GridService assigns).
 GameConfig.Collision = {
 	Players = "Players", -- every character part
@@ -124,6 +159,8 @@ GameConfig.PlotGuard = {
 	SpawnShieldSeconds = 2, -- ForceField on every spawn on your walkway
 }
 
+-- dig() (Bones & Fossils research): on BARE soil only (harvest what grows there first), a
+-- chance to find a fossil.
 GameConfig.Dig = {
 	-- Low odds, fossils stay a jackpot (25 Biomass points). With the exhaustion below a
 	-- `while True: dig()` sweep earns well under a wheat pipeline.
@@ -199,6 +236,7 @@ GameConfig.Script = {
 	HeapScanEvery = 1000, -- items created between two scans
 
 	MaxOutputPerSecond = 20, -- print()/hint messages sent to the client
+	MaxLineStatusPerSecond = 20, -- ScriptStatus "line" (running-line highlight) updates per player
 	MaxOutputLength = 200, -- characters per output message
 }
 
@@ -206,6 +244,9 @@ GameConfig.Script = {
 GameConfig.Simulate = {
 	MaxSeconds = 600, -- largest simulated duration
 	MaxSteps = 100000, -- step budget for one simulate() call (still CPU-throttled)
+	-- Real seconds every simulate() call takes on the live farm at least (it runs on a virtual
+	-- clock, so without this a loop of simulate() calls would cost no time at all).
+	MinRealSeconds = 1,
 }
 
 GameConfig.Data = {

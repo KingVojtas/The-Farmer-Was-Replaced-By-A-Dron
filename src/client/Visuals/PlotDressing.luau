@@ -20,7 +20,8 @@
 	set by the server from the pass) adds gold trim, never a text prefix.
 	setStation("factory") lights the biofluid slit (Neon, flickering) and the amber lamp (pulsing)
 	while the drone deposits or refines; any other value returns them to idle: dark, no Neon. The charger's ring pulse is
-	PlotRenderer's, since it owns the rings.
+	PlotRenderer's, since it owns the rings. An artist factory (Assets.Stations.factory) brings its
+	own "Slit" and "Lamp": PlotRenderer hands them over with setFactoryLights, and they work the same.
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -36,6 +37,7 @@ export type Dressing = {
 	setLevel: (level: string) -> (),
 	rebuild: () -> (),
 	setStation: (kind: string?) -> (),
+	setFactoryLights: (slit: BasePart?, lamp: BasePart?) -> (),
 	destroy: () -> (),
 }
 
@@ -56,6 +58,37 @@ local SLIT_IDLE = Color3.fromHex("#1E4034")
 local LAMP_IDLE = Color3.fromHex("#4A3A22")
 local SLIT_FLICKER = TweenInfo.new(0.09, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1, true)
 local LAMP_PULSE = TweenInfo.new(0.4, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
+
+--[[
+	The low-poly dressing kit (ReplicatedStorage.Assets.Dressing, tools/blender/tiles.py):
+	places a clone of mesh piece `name` at `cframe`, stretched per axis in the piece's own space
+	(`scale`: the rail along Z, the walkway along X; the kit's parts are axis-aligned). Returns
+	false when the piece isn't there, so the caller builds its procedural Part instead.
+]]
+local function placePiece(
+	name: string,
+	cframe: CFrame,
+	scale: Vector3,
+	parent: Instance,
+	shadow: boolean
+): boolean
+	local model = AssetLibrary.dressing(name)
+	if model == nil then
+		return false
+	end
+	local pivot = model:GetPivot()
+	for _, descendant in model:GetDescendants() do
+		if descendant:IsA("BasePart") then
+			local rel = pivot:ToObjectSpace(descendant.CFrame)
+			descendant.Size = descendant.Size * scale
+			descendant.CFrame = cframe * (CFrame.new(rel.Position * scale) * rel.Rotation)
+			descendant.CastShadow = shadow
+		end
+	end
+	model.WorldPivot = cframe
+	model.Parent = parent
+	return true
+end
 
 local function inert(
 	name: string,
@@ -90,6 +123,9 @@ function PlotDressing.new(plot: Model, folder: Folder): Dressing
 	local root: Folder? = nil
 	local slit: BasePart? = nil
 	local lamp: BasePart? = nil
+	-- An artist factory's own lights (PlotRenderer owns those parts; used when no procedural one).
+	local artistSlit: BasePart? = nil
+	local artistLamp: BasePart? = nil
 	local stationTweens: { Tween } = {}
 	local activeStation: string? = nil
 	local pending = false
@@ -125,17 +161,24 @@ function PlotDressing.new(plot: Model, folder: Folder): Dressing
 			local segments = math.max(1, math.ceil(length / (POST_EVERY * pitch)))
 			-- Each corner post is placed once: runs skip their last post, except the final run.
 			for i = 0, if run == 3 then segments else segments - 1 do
-				local post = inert("FencePost", Vector3.new(0.32, 1.3, 0.32), WOOD, Enum.Material.Wood)
-				post.CFrame = CFrame.new(a:Lerp(b, i / segments) + Vector3.new(0, 0.65, 0))
-				post.Parent = parent
+				local at = CFrame.new(a:Lerp(b, i / segments) + Vector3.new(0, 0.65, 0))
+				if not placePiece("FencePost", at, Vector3.one, parent, true) then
+					local post = inert("FencePost", Vector3.new(0.32, 1.3, 0.32), WOOD, Enum.Material.Wood)
+					post.CFrame = at
+					post.Parent = parent
+				end
 			end
 			for _, height in { 0.55, 1.0 } do
-				local rail =
-					inert("FenceRail", Vector3.new(0.12, 0.12, length), WOOD_DARK, Enum.Material.Wood)
-				rail.CastShadow = false
 				local mid = (a + b) / 2 + Vector3.new(0, height, 0)
-				rail.CFrame = CFrame.lookAt(mid, b + Vector3.new(0, height, 0))
-				rail.Parent = parent
+				local at = CFrame.lookAt(mid, b + Vector3.new(0, height, 0))
+				-- The mesh rail is 2 studs long: stretch it along its own Z to the run's length.
+				if not placePiece("FenceRail", at, Vector3.new(1, 1, length / 2), parent, false) then
+					local rail =
+						inert("FenceRail", Vector3.new(0.12, 0.12, length), WOOD_DARK, Enum.Material.Wood)
+					rail.CastShadow = false
+					rail.CFrame = at
+					rail.Parent = parent
+				end
 			end
 		end
 	end
@@ -147,13 +190,20 @@ function PlotDressing.new(plot: Model, folder: Folder): Dressing
 			return
 		end
 		local base = Vector3.new(sign.Position.X, 0, sign.Position.Z)
-		local pole = inert("SignPole", Vector3.new(0.45, SIGN_POST_TOP, 0.45), WOOD, Enum.Material.Wood)
-		pole.CFrame = CFrame.new(base + Vector3.new(0, SIGN_POST_TOP / 2, 0))
-		pole.Parent = parent
-		local bar = inert("SignBar", Vector3.new(3.4, 0.28, 0.28), WOOD_DARK, Enum.Material.Wood)
-		bar.CFrame = CFrame.new(base + Vector3.new(0, SIGN_POST_TOP - 0.25, 0))
-		bar.Parent = parent
 		local vip = plot:GetAttribute("OwnerVip") == true
+		-- The mesh post brings its own pole, bar and wooden cap; VIP still adds the gold cap + trim.
+		local meshPost = placePiece("SignPost", CFrame.new(base), Vector3.one, parent, true)
+		if not meshPost then
+			local pole = inert("SignPole", Vector3.new(0.45, SIGN_POST_TOP, 0.45), WOOD, Enum.Material.Wood)
+			pole.CFrame = CFrame.new(base + Vector3.new(0, SIGN_POST_TOP / 2, 0))
+			pole.Parent = parent
+			local bar = inert("SignBar", Vector3.new(3.4, 0.28, 0.28), WOOD_DARK, Enum.Material.Wood)
+			bar.CFrame = CFrame.new(base + Vector3.new(0, SIGN_POST_TOP - 0.25, 0))
+			bar.Parent = parent
+		end
+		if meshPost and not vip then
+			return
+		end
 		local cap = inert(
 			"SignCap",
 			Vector3.new(0.6, 0.6, 0.6),
@@ -178,6 +228,10 @@ function PlotDressing.new(plot: Model, folder: Folder): Dressing
 		local ground = origin.Y - GRID.TileHeight
 		local width = size * pitch + 3.2
 		local center = Vector3.new(origin.X + (size - 1) * pitch / 2, ground, origin.Z + 2 * pitch)
+		-- The mesh walkway is 6.4 wide: stretch it along X to the field's width.
+		if placePiece("Walkway", CFrame.new(center), Vector3.new(width / 6.4, 1, 1), parent, false) then
+			return
+		end
 		local gravel = inert("Gravel", Vector3.new(width, 0.06, GRID.TileSize), GRAVEL, Enum.Material.Pebble)
 		gravel.CastShadow = false
 		gravel.CFrame = CFrame.new(center + Vector3.new(0, 0.03, 0))
@@ -239,7 +293,7 @@ function PlotDressing.new(plot: Model, folder: Folder): Dressing
 		end
 		table.clear(stationTweens)
 		-- Idle: dark and opaque, no Neon (ART-6).
-		local s, l = slit, lamp
+		local s, l = slit or artistSlit, lamp or artistLamp
 		if s ~= nil then
 			s.Material = Enum.Material.SmoothPlastic
 			s.Color = SLIT_IDLE
@@ -254,7 +308,7 @@ function PlotDressing.new(plot: Model, folder: Folder): Dressing
 
 	local function applyStation()
 		stopStation()
-		local s, l = slit, lamp
+		local s, l = slit or artistSlit, lamp or artistLamp
 		if activeStation ~= "factory" or s == nil or l == nil then
 			return
 		end
@@ -336,6 +390,11 @@ function PlotDressing.new(plot: Model, folder: Folder): Dressing
 				activeStation = kind
 				applyStation()
 			end
+		end,
+		setFactoryLights = function(newSlit: BasePart?, newLamp: BasePart?)
+			artistSlit = newSlit
+			artistLamp = newLamp
+			applyStation()
 		end,
 		destroy = function()
 			for _, connection in connections do

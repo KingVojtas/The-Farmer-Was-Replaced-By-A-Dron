@@ -1,0 +1,18 @@
+# Line endings: LF everywhere (stylua.toml demands Unix line endings), whatever
+# core.autocrlf says on the machine that checks the repo out (BUG-14).
+* text=auto eol=lf
+
+# Binary assets: never touch their bytes.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.tga binary
+*.rbxm binary
+*.rbxl binary
+*.fbx binary
+*.glb binary
+*.blend binary
+*.wav binary
+*.ogg binary
+*.mp3 binary
+*.pyc binary

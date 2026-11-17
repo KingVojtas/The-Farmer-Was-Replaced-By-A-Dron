@@ -67,6 +67,10 @@ local WIDTH = 230
 local ROW_HEIGHT = 32
 local ICON_SIZE = 24
 local LOW_BATTERY = 0.15
+-- Segmented battery (5 cells, like the drone's BatteryBar, ART_BIBLE §4.1): lit cells use the
+-- drone strip's colours (DroneSignals.statusLight: > 50 % lime, 15-50 % amber, < 15 % red).
+local BATTERY_CELLS = 5
+local CELL_OFF = Color3.fromRGB(38, 46, 58)
 local COUNT_TIME = 0.35
 
 type Row = {
@@ -86,7 +90,7 @@ local rows: { [string]: Row } = {}
 local rawHeader: TextLabel
 local energy: {
 	row: Row,
-	fill: Frame,
+	cells: { Frame },
 	stroke: UIStroke,
 	lowBlink: Tween?,
 	wasFull: boolean,
@@ -220,28 +224,31 @@ end
 local function buildEnergyRow(order: number)
 	local row = buildRow(stack, "Energy", "Battery", "energy", order, false)
 	row.value.Text = "100%"
-	-- An inline mini meter after the percentage - just the 4th item of the row's horizontal
-	-- UIListLayout, so it stays aligned at every width. Its fill has a lime -> cyan gradient.
+	-- An inline SEGMENTED meter after the percentage (the 4th item of the row's horizontal
+	-- UIListLayout, so it stays aligned at every width): 5 cells, like the drone's BatteryBar.
 	local track: Frame = Theme.create("Frame", {
 		Name = "Bar",
-		BackgroundColor3 = C.Background,
-		BorderSizePixel = 0,
-		Size = UDim2.fromOffset(46, 6),
+		BackgroundTransparency = 1,
+		Size = UDim2.fromOffset(46, 7),
 		LayoutOrder = 4,
 		Parent = row.frame,
-	}, { Theme.corner(3), Theme.stroke(C.Border, 1, 0.3) })
-	local fill: Frame = Theme.create("Frame", {
-		Name = "Fill",
-		BackgroundColor3 = Color3.new(1, 1, 1),
-		BorderSizePixel = 0,
-		Size = UDim2.fromScale(1, 1),
-		Parent = track,
-	}, {
-		Theme.corner(3),
-		Theme.create("UIGradient", { Color = ColorSequence.new(C.Accent, C.Info) }),
-	})
+	}, { Theme.list(Enum.FillDirection.Horizontal, 2) })
+	local cells: { Frame } = {}
+	for index = 1, BATTERY_CELLS do
+		table.insert(
+			cells,
+			Theme.create("Frame", {
+				Name = "Cell" .. index,
+				BackgroundColor3 = CELL_OFF,
+				BorderSizePixel = 0,
+				Size = UDim2.new(1 / BATTERY_CELLS, -2, 1, 0),
+				LayoutOrder = index,
+				Parent = track,
+			}, { Theme.corner(2), Theme.stroke(C.Border, 1, 0.5) })
+		)
+	end
 	local stroke = row.frame:FindFirstChildOfClass("UIStroke") :: UIStroke
-	energy = { row = row, fill = fill, stroke = stroke, lowBlink = nil, wasFull = true }
+	energy = { row = row, cells = cells, stroke = stroke, lowBlink = nil, wasFull = true }
 end
 
 local function buildStack()
@@ -423,7 +430,21 @@ local function refreshEnergy()
 	local fraction = if maxBattery > 0 then math.clamp(battery / maxBattery, 0, 1) else 0
 	local row = energy.row
 	row.value.Text = string.format("%d%%", math.floor(fraction * 100 + 0.5))
-	TweenService:Create(energy.fill, TweenInfo.new(0.25), { Size = UDim2.fromScale(fraction, 1) }):Play()
+	-- Lit cells: ceil(fraction * 5) (any charge lights the first), coloured like the drone strip.
+	local lit = if fraction > 0 then math.ceil(fraction * BATTERY_CELLS - 1e-6) else 0
+	local litColor = if fraction > 0.5
+		then C.Accent
+		elseif fraction >= LOW_BATTERY then C.Warning
+		else C.Danger
+	for index, cell in energy.cells do
+		TweenService
+			:Create(
+				cell,
+				TweenInfo.new(0.2),
+				{ BackgroundColor3 = if index <= lit then litColor else CELL_OFF }
+			)
+			:Play()
+	end
 
 	local low = maxBattery > 0 and fraction <= LOW_BATTERY
 	row.value.TextColor3 = if low then C.Danger else C.Text

@@ -63,6 +63,7 @@ export type TerminalView = {
 	-- Fade the whole terminal in/out (Control Mode only; hidden while exploring).
 	setVisible: (visible: boolean, fadeTime: number?) -> (),
 	isVisible: () -> boolean,
+	isCollapsed: () -> boolean, -- the body is folded away (V-CONSOLE reticle)
 	onSlotSelected: ((slot: number) -> ())?,
 	onRename: ((slot: number, name: string) -> ())?,
 }
@@ -304,8 +305,11 @@ function TerminalView.build(): TerminalView
 		Size = UDim2.new(1, 0, 0, 30),
 		Parent = body,
 	})
-	local runButton = Theme.button("RUN", C.Accent, { Font = Theme.UIFontHeavy, Parent = footer })
+	-- Named so tools (tools/studio_smoke.py) and the tutorial can address them by path.
+	local runButton =
+		Theme.button("RUN", C.Accent, { Name = "RunButton", Font = Theme.UIFontHeavy, Parent = footer })
 	local stopButton = Theme.button("STOP", C.Danger, {
+		Name = "StopButton",
 		Font = Theme.UIFontHeavy,
 		Position = UDim2.fromOffset(92, 0),
 		Parent = footer,
@@ -313,6 +317,7 @@ function TerminalView.build(): TerminalView
 	Components.hover(runButton)
 	Components.hover(stopButton)
 	local status: TextLabel = Theme.create("TextLabel", {
+		Name = "Status",
 		Text = "Idle",
 		Font = Theme.UIFont,
 		TextSize = 13,
@@ -548,6 +553,10 @@ function TerminalView.build(): TerminalView
 				end
 				Fade.hide(gui, fadeTime)
 			end
+		end,
+
+		isCollapsed = function(): boolean
+			return collapsed
 		end,
 
 		isVisible = function(): boolean

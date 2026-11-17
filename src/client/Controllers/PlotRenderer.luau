@@ -97,6 +97,7 @@ local AssetLibrary = require(script.Parent.Parent.Visuals.AssetLibrary)
 local PlotDressing = require(script.Parent.Parent.Visuals.PlotDressing)
 local PlotSpace = require(script.Parent.Parent.Visuals.PlotSpace)
 local SoilLook = require(script.Parent.Parent.Visuals.SoilLook)
+local SoundController = require(script.Parent.SoundController)
 
 local DRONE = GameConfig.Drone
 local GRID = GameConfig.Grid
@@ -349,6 +350,8 @@ local SHADOW_SIZE = Vector3.new(3.5, 0.05, 3.5)
 local SHADOW_COLOR = Color3.fromHex("#0E1218")
 local SHADOW_ALPHA = 0.55
 local SHADOW_FADE = TweenInfo.new(0.2)
+local BEAM_WIDTH = 0.04 -- V-CONTACT height beam (cyan, Control Mode only)
+local BEAM_ALPHA = 0.85
 
 type PartPose = { part: BasePart, offset: CFrame, spins: boolean }
 type PaintRole = "primary" | "secondary" | "accent"
@@ -373,6 +376,7 @@ type DroneVisual = {
 	poseYaw: NumberValue, -- radians
 	pose: { Tween }, -- the current action pose's tweens (one pose at a time)
 	cell: Vector2?,
+	serial: number?, -- DroneSerial of `cell` (only a newer serial moves the drone, BUG-05)
 	moveTween: Tween?,
 	bobScale: NumberValue, -- 1 = normal hover, LIMP_BOB while limping (tweened)
 	status: BasePart, -- the battery / state light
@@ -384,6 +388,7 @@ type DroneVisual = {
 	simple: boolean, -- MID tier: body + status light only, snapped, no tweens
 	loops: { Tween }, -- infinite tweens (bob, spin): cancelled on teardown
 	shadow: Part?, -- soft ground shadow under YOUR near drone (moved with BulkMoveTo)
+	beam: Beam?, -- V-CONTACT height beam shadow -> body (Control Mode only)
 }
 
 type PartSpec = {
@@ -1003,7 +1008,8 @@ local SHAPES: { [string]: { sprout: { PartSpec }, growing: { PartSpec }, ready: 
 local PlotRenderer = {}
 
 local visuals: { [Model]: PlotVisual } = {}
-local lastMoved: { [number]: Vector2 } = {} -- plot Index -> last DroneMoved cell (attrs can lag)
+-- plot Index -> last DroneMoved cell + serial (attrs can lag). Cleared when the plot goes.
+local lastMoved: { [number]: { cell: Vector2, serial: number? } } = {}
 local localFolder: Folder
 
 -- Crop juice state.
@@ -1101,6 +1107,20 @@ local function sameCell(a: Vector2?, b: Vector2?): boolean
 	return a ~= nil and b ~= nil and a.X == b.X and a.Y == b.Y
 end
 
+-- ASSETS-8: your drone's step sound. One tile only: a reset to the charger is a snap, not a hop.
+-- Both move paths call it; whichever lands second sees the same cell and stays quiet.
+local function hopSound(own: boolean, from: Vector2?, to: Vector2?)
+	if own and from ~= nil and to ~= nil and not sameCell(from, to) and (to - from).Magnitude <= 1.5 then
+		SoundController.play("hop")
+	end
+end
+
+-- The published DroneSerial (nil on an old server without it).
+local function readDroneSerial(plot: Model): number?
+	local serial = plot:GetAttribute("DroneSerial")
+	return if type(serial) == "number" then serial else nil
+end
+
 ---------------------------------------------------------------------------------- drone
 local CERAMIC = Color3.fromHex("#D7E2EC") -- Bible ceramic white (visor rim)
 -- Colours BEFORE the paint job applies (it tweens in a moment later): the default Factory Grey,
@@ -1110,8 +1130,12 @@ local HULL_MID_COLOR = Color3.fromHex("#2E3846")
 
 -- The procedural drone (docs/ART_BIBLE.md §4.1): a dark hull (paint primary; the default
 -- Factory Grey is hull dark #1E2530), a ceramic visor rim with one neon eye slit on -Z (paint
--- accent), a neon battery strip on the spine (coloured by charge), 4 arms and 4 rotors. 12
--- parts. The top of the body stays clear in a 1.2-stud circle for hats.
+-- accent), a neon battery strip on the spine (coloured by charge), 4 arms and 4 rotors (each a
+-- translucent blur disc + a spinning blade). 16 parts. The top of the body stays clear in a
+-- 1.2-stud circle for hats.
+local ROTOR_BLUR_COLOR = Color3.fromHex("#C9D3DC") -- Bible chrome
+local ROTOR_BLUR_ALPHA = 0.62
+local ROTOR_BLADE_COLOR = Color3.fromHex("#2A313C")
 local function buildProceduralDrone(model: Model, add: (BasePart, CFrame, boolean, PaintRole?) -> ())
 	add(
 		decorPart("Body", Vector3.new(2.4, 0.8, 2.4), HULL_COLOR, Enum.Material.Metal),
@@ -1148,18 +1172,28 @@ local function buildProceduralDrone(model: Model, add: (BasePart, CFrame, boolea
 			false,
 			"secondary"
 		)
-		add(
-			decorPart(
-				"Rotor" .. i,
-				Vector3.new(0.12, 1.5, 1.5),
-				Color3.fromRGB(180, 190, 205),
-				Enum.Material.SmoothPlastic,
-				Enum.PartType.Cylinder
-			),
-			CFrame.new(corner * 1.6 + Vector3.new(0, 0.5, 0)) * CFrame.Angles(0, 0, math.rad(90)),
-			true,
-			nil
+		-- Rotor = a translucent blur disc + one dark blade bar (ASSETS-2). A solid disc is
+		-- rotationally symmetric, so it never LOOKED like it spun; the blade does, and the disc
+		-- reads as motion blur from the bird's-eye camera. Both spin (render's rotor pose).
+		local hub = corner * 1.6 + Vector3.new(0, 0.5, 0)
+		local disc = decorPart(
+			"Rotor" .. i,
+			Vector3.new(0.05, 1.5, 1.5),
+			ROTOR_BLUR_COLOR,
+			Enum.Material.SmoothPlastic,
+			Enum.PartType.Cylinder
 		)
+		disc.Transparency = ROTOR_BLUR_ALPHA
+		disc.CastShadow = false
+		add(disc, CFrame.new(hub) * CFrame.Angles(0, 0, math.rad(90)), true, nil)
+		local blade = decorPart(
+			"Rotor" .. i .. "Blade",
+			Vector3.new(0.16, 0.05, 1.42),
+			ROTOR_BLADE_COLOR,
+			Enum.Material.Metal
+		)
+		blade.CastShadow = false
+		add(blade, CFrame.new(hub + Vector3.new(0, 0.04, 0)), true, nil)
 	end
 	model.Name = "Drone"
 end
@@ -1255,6 +1289,7 @@ local function buildDrone(folder: Folder, simple: boolean): DroneVisual
 		poseYaw = value("NumberValue", 0),
 		pose = {},
 		cell = nil,
+		serial = nil,
 		moveTween = nil,
 		bobScale = value("NumberValue", 1),
 		status = status :: BasePart,
@@ -1454,7 +1489,9 @@ local function applyHat(drone: DroneVisual, hatId: any)
 			if descendant:IsA("BasePart") then
 				local offset = CFrame.new(0, 0.4, 0) * pivot:ToObjectSpace(descendant.CFrame)
 				descendant.Parent = drone.model
-				table.insert(drone.hatPoses, { part = descendant, offset = offset, spins = false })
+				-- "Rotor*" parts spin around their own origin, like the drone's (propeller cap).
+				local spins = string.sub(descendant.Name, 1, 5) == "Rotor"
+				table.insert(drone.hatPoses, { part = descendant, offset = offset, spins = spins })
 			end
 		end
 		asset:Destroy()
@@ -1779,6 +1816,9 @@ local function refreshStations(plotVisual: PlotVisual, force: boolean?)
 	local arriving = station == "charger" and plotVisual.activeStation ~= "charger" and force ~= true
 	plotVisual.activeStation = station
 	plotVisual.ringFast = false
+	if plotVisual.own then
+		SoundController.setLoop("charge", false) -- onBattery starts it again while charging
+	end
 	local shadow = plotVisual.drone.shadow
 	if shadow ~= nil then
 		TweenService
@@ -1812,6 +1852,7 @@ local function refreshStations(plotVisual: PlotVisual, force: boolean?)
 		task.delay(touchdown, function()
 			if visuals[plotVisual.plot] == plotVisual and plotVisual.activeStation == "charger" then
 				punchPad(plotVisual)
+				SoundController.play("land")
 			end
 		end)
 	end
@@ -1848,11 +1889,26 @@ local function snapDrone(drone: DroneVisual)
 	end
 end
 
--- Tween the drone to a cell (attribute, remote, or poll).
-local function updateDroneTarget(plotVisual: PlotVisual, instant: boolean, cellOverride: Vector2?)
+--[[
+	Tween the drone to a cell (attribute, remote, or poll). Without `cellOverride` the cell and
+	its serial come from the plot attributes; with it, pass the serial that came with it (the
+	DroneMoved payload, the poll's attribute read, the cached last remote).
+	SERIAL ORDER (BUG-05): a non-instant update moves the drone only when its DroneSerial is
+	NEWER than the one it shows (Shared.Util.DroneSignals.shouldApply), so a remote that beats
+	the attributes (or a lagging attribute after the remote) can never tween the drone back,
+	and duplicate fires never restart a running tween. An instant pose adopts the serial it was
+	given, so the poll stays in step with the attributes afterwards.
+]]
+local function updateDroneTarget(
+	plotVisual: PlotVisual,
+	instant: boolean,
+	cellOverride: Vector2?,
+	serialOverride: number?
+)
 	local plot = plotVisual.plot
 	local drone = plotVisual.drone
 	local cell = cellOverride or readDroneCell(plot)
+	local serial = if cellOverride ~= nil then serialOverride else readDroneSerial(plot)
 	-- Without all three the drone can't be placed; the Origin / Pitch / Drone listeners retry.
 	if
 		cell == nil
@@ -1862,9 +1918,18 @@ local function updateDroneTarget(plotVisual: PlotVisual, instant: boolean, cellO
 		return
 	end
 	local previous = drone.cell
-	-- Duplicate Drone + DroneSerial / remote fires must not restart a tween already on this cell.
-	if not instant and sameCell(previous, cell) then
-		return
+	if instant then
+		drone.serial = serial
+	else
+		if not DroneSignals.shouldApply(drone.serial, serial, not sameCell(previous, cell)) then
+			return -- an older (or the same) move: never tween back, never restart a tween
+		end
+		if serial ~= nil then
+			drone.serial = serial
+		end
+		if sameCell(previous, cell) then
+			return -- a newer serial for the cell already shown: nothing to animate
+		end
 	end
 	local target = cellCFrame(plot, cell)
 	drone.cell = cell
@@ -2749,11 +2814,20 @@ local function refreshTile(plotVisual: PlotVisual, tile: BasePart)
 		else "plain"
 
 	updateCrop(plotVisual, tile, style, juicy)
-	-- Soil state (docs/ART_BIBLE.md §2.4): Dry / Tilled / Wet, via Visuals.SoilLook.
-	local soil = SoilStates.forTile(current.state, current.crop, current.watered)
+	-- Soil state (docs/ART_BIBLE.md §2.4): Dry / Tilled / Wet / Dug, via Visuals.SoilLook.
+	local soil = SoilStates.forTile(
+		current.state,
+		current.crop,
+		current.watered,
+		tile:GetAttribute("Exhausted") == true
+	)
 	local flash = juicy and events.harvest
-	if soil ~= plotVisual.soil[tile] or flash then
+	local wasSoil = plotVisual.soil[tile]
+	if soil ~= wasSoil or flash then
 		plotVisual.soil[tile] = soil
+		if plotVisual.own and wasSoil ~= nil and wasSoil ~= "SoilDug" and soil == "SoilDug" then
+			SoundController.play("dig") -- dig() exhausted this tile (never on first sight)
+		end
 		SoilLook.apply(
 			tile,
 			soil,
@@ -2799,7 +2873,8 @@ local function refreshTile(plotVisual: PlotVisual, tile: BasePart)
 	-- Your drone's tool flash + body pose (ANIM-2), only for actions we are sure about
 	-- (DroneSignals.action: never unripe harvests, wild-grass regrowth or rain).
 	if plotVisual.own then
-		local action = DroneSignals.action(events, plantedWild, droneOver(plotVisual, tile), raining)
+		local over = droneOver(plotVisual, tile)
+		local action = DroneSignals.action(events, plantedWild, over, raining)
 		if action ~= nil then
 			toolFlash(
 				plotVisual,
@@ -2807,6 +2882,9 @@ local function refreshTile(plotVisual: PlotVisual, tile: BasePart)
 				if action == "plant" then PLANT_DIP elseif action == "harvest" then SCOOP_DIP else 0
 			)
 			playPose(plotVisual.drone, action)
+			SoundController.play(action) -- "plant" | "harvest" | "water"
+		elseif events.harvest and not events.ripe and over then
+			SoundController.play("unripe")
 		end
 	end
 end
@@ -2823,7 +2901,7 @@ local function watchTile(plotVisual: PlotVisual, child: Instance)
 		plotVisual.pending[tile] = true
 		task.defer(refreshTile, plotVisual, tile)
 	end
-	for _, attribute in { "State", "Crop", "Progress", "Watered" } do
+	for _, attribute in { "State", "Crop", "Progress", "Watered", "Exhausted" } do
 		table.insert(plotVisual.connections, tile:GetAttributeChangedSignal(attribute):Connect(schedule))
 	end
 	refreshTile(plotVisual, tile)
@@ -2869,8 +2947,13 @@ local function refreshShadow(plotVisual: PlotVisual)
 	local current = drone.shadow
 	if current ~= nil then
 		if not want then
-			current:Destroy()
+			current:Destroy() -- takes the beam with it (it lives in the shadow part)
 			drone.shadow = nil
+			local head = drone.beam and drone.beam.Attachment1
+			if head ~= nil then
+				head:Destroy()
+			end
+			drone.beam = nil
 		end
 		return
 	end
@@ -2886,6 +2969,37 @@ local function refreshShadow(plotVisual: PlotVisual)
 	part.CFrame = shadowCFrame(drone)
 	part.Parent = drone.model
 	drone.shadow = part
+	-- V-CONTACT: a thin cyan height beam from the shadow up to the body. Both ends are
+	-- attachments in parts BulkMoveTo already moves; shown only in Control Mode (refreshLod).
+	local bodyPose = drone.poses[1]
+	for _, pose in drone.poses do
+		if pose.part.Name == "Body" then
+			bodyPose = pose
+		end
+	end
+	if bodyPose ~= nil then
+		local foot = Instance.new("Attachment")
+		foot.Name = "BeamFoot"
+		foot.Parent = part
+		local head = Instance.new("Attachment")
+		head.Name = "BeamHead"
+		head.Position = Vector3.new(0, -0.4, 0) -- the underside of the body
+		head.Parent = bodyPose.part
+		local beam = Instance.new("Beam")
+		beam.Name = "HeightBeam"
+		beam.Attachment0 = foot
+		beam.Attachment1 = head
+		beam.Color = ColorSequence.new(STATUS_COLORS.cyan)
+		beam.Width0 = BEAM_WIDTH
+		beam.Width1 = BEAM_WIDTH
+		beam.Transparency = NumberSequence.new(BEAM_ALPHA)
+		beam.LightEmission = 0.5
+		beam.FaceCamera = true
+		beam.Segments = 1
+		beam.Enabled = false
+		beam.Parent = part
+		drone.beam = beam
+	end
 end
 
 local function updatePlotLod(plotVisual: PlotVisual, distance: number)
@@ -2953,6 +3067,10 @@ local function refreshLod(distances: { [Model]: number })
 			end
 		end
 		local showMarkers = plotVisual.own and controlling and readyCount <= FX.MaxReadyMarkers
+		local beam = plotVisual.drone.beam
+		if beam ~= nil and beam.Enabled ~= (plotVisual.own and controlling) then
+			beam.Enabled = plotVisual.own and controlling
+		end
 		local canSway = plotVisual.own or (neighboursSway and plotVisual.fullFx)
 		for _, visual in plotVisual.crops do
 			if showMarkers and visual.ready then
@@ -3015,12 +3133,47 @@ local function decorateStation(plotVisual: PlotVisual, station: Instance)
 			plotVisual.chimneyTop = chimney.Position + Vector3.new(0, chimney.Size.Y / 2, 0)
 		end
 	end
+	-- The server's pad is Neon; locally it goes dark while idle (restored on teardown).
+	local function darkenChargerPad()
+		if plotVisual.chargerPad == nil then
+			plotVisual.chargerPad =
+				{ part = station, material = station.Material, color = station.Color, size = station.Size }
+			station.Material = Enum.Material.SmoothPlastic
+			station.Color = PAD_IDLE
+		end
+	end
 	local asset = AssetLibrary.station(kind)
 	if asset ~= nil then
 		asset:PivotTo(top)
 		asset.Parent = plotVisual.folder
 		if kind == "factory" then
 			useFactoryParts(asset)
+			-- Its biofluid ("Slit") and work "Lamp" light up while the drone works (PlotDressing).
+			local slit = asset:FindFirstChild("Slit", true)
+			local lamp = asset:FindFirstChild("Lamp", true)
+			plotVisual.dressing.setFactoryLights(
+				if slit ~= nil and slit:IsA("BasePart") then slit else nil,
+				if lamp ~= nil and lamp:IsA("BasePart") then lamp else nil
+			)
+		elseif kind == "charger" then
+			-- Its light guides (Ring1..4), PylonLight and Conduit glow and pulse cyan while
+			-- charging, exactly like the procedural rings (refreshStations / pulseRings).
+			for _, descendant in asset:GetDescendants() do
+				local name = descendant.Name
+				if
+					descendant:IsA("BasePart")
+					and (
+						string.match(name, "^Ring%d+$") ~= nil
+						or name == "PylonLight"
+						or string.sub(name, 1, 7) == "Conduit"
+					)
+				then
+					descendant.Material = Enum.Material.SmoothPlastic
+					descendant.Color = STATION_IDLE
+					table.insert(plotVisual.chargerGlow, descendant)
+				end
+			end
+			darkenChargerPad()
 		end
 		return
 	end
@@ -3092,13 +3245,7 @@ local function decorateStation(plotVisual: PlotVisual, station: Instance)
 		)
 		add(pylonLight, CFrame.new(-2.6, 2.4, -2.6))
 		table.insert(plotVisual.chargerGlow, pylonLight)
-		-- The server's pad is Neon; locally it goes dark while idle (restored on teardown).
-		if station:IsA("BasePart") and plotVisual.chargerPad == nil then
-			plotVisual.chargerPad =
-				{ part = station, material = station.Material, color = station.Color, size = station.Size }
-			station.Material = Enum.Material.SmoothPlastic
-			station.Color = PAD_IDLE
-		end
+		darkenChargerPad()
 	end
 end
 
@@ -3147,6 +3294,7 @@ local function onCargo(plotVisual: PlotVisual)
 	if station == "factory" then
 		playPose(drone, "factory") -- ANIM-2: a small settle, no scoop
 	end
+	SoundController.play(if station == "factory" then "deposit" else "unload")
 
 	-- ANIM-4: the bits leave the drone (one unload burst at a time).
 	local clock = os.clock()
@@ -3207,6 +3355,7 @@ local function onBattery(plotVisual: PlotVisual)
 	if plotVisual.own and plotVisual.activeStation == "charger" and not plotVisual.ringFast then
 		plotVisual.ringFast = true
 		pulseRings(plotVisual, RING_PULSE_FAST)
+		SoundController.setLoop("charge", true)
 	end
 end
 
@@ -3221,6 +3370,9 @@ local function teardownPlot(plot: Model)
 		return
 	end
 	visuals[plot] = nil
+	if plotVisual.own then
+		SoundController.setLoop("charge", false)
+	end
 	for _, connection in plotVisual.connections do
 		connection:Disconnect()
 	end
@@ -3318,10 +3470,19 @@ local function buildPlot(plot: Model, tier: string)
 	applyPaint(plotVisual.drone, if cachedPaint ~= nil then cachedPaint else plot:GetAttribute("DronePaint"))
 	applyHat(plotVisual.drone, plot:GetAttribute("DroneHat"))
 	updateDroneTarget(plotVisual, true)
+	-- A DroneMoved that beat the attributes here: only if it's NEWER than what they say (a
+	-- stale entry from an older plot with this Index has an older serial: BUG-06).
 	local index = plot:GetAttribute("Index")
-	local moved = if type(index) == "number" then lastMoved[index] :: Vector2? else nil
-	if moved ~= nil then
-		updateDroneTarget(plotVisual, true, moved)
+	local moved = if type(index) == "number" then lastMoved[index] else nil
+	if
+		moved ~= nil
+		and DroneSignals.shouldApply(
+			plotVisual.drone.serial,
+			moved.serial,
+			not sameCell(plotVisual.drone.cell, moved.cell)
+		)
+	then
+		updateDroneTarget(plotVisual, true, moved.cell, moved.serial)
 	end
 
 	local function onChild(child: Instance)
@@ -3345,6 +3506,7 @@ local function buildPlot(plot: Model, tier: string)
 		updateDroneTarget(plotVisual, false)
 		-- Your drone kicks up dust when it leaves a field tile (one step, not a teleport).
 		local to = drone.cell
+		hopSound(plotVisual.own, from, to)
 		if
 			plotVisual.own
 			and plotVisual.fullFx
@@ -3467,6 +3629,11 @@ untrackPlot = function(plot: Model)
 	end
 	tiers[plot] = nil
 	farPaint[plot] = nil
+	-- The next plot with this Index belongs to someone else: drop the cached remote (BUG-06).
+	local index = plot:GetAttribute("Index")
+	if type(index) == "number" then
+		lastMoved[index] = nil
+	end
 	leaveFar(plot)
 	teardownPlot(plot)
 end
@@ -3565,9 +3732,13 @@ local function render(dt: number)
 		-- Catch a missed AttributeChanged on any NEAR plot (own is always NEAR).
 		if plotVisual.tier == "near" then
 			local published = readDroneCell(plotVisual.plot)
-			if published ~= nil and not sameCell(drone.cell, published) then
+			local serial = readDroneSerial(plotVisual.plot)
+			if
+				published ~= nil
+				and DroneSignals.shouldApply(drone.serial, serial, not sameCell(drone.cell, published))
+			then
 				-- Guarded: one bad plot must never stop every drone from being composed.
-				local ok, err = pcall(updateDroneTarget :: any, plotVisual, false, published)
+				local ok, err = pcall(updateDroneTarget :: any, plotVisual, false, published, serial)
 				if not ok then
 					warn("[PlotRenderer] drone update failed: " .. tostring(err))
 				end
@@ -3698,21 +3869,32 @@ function PlotRenderer:Start()
 	-- ScriptStatus already reaches the client (the terminal highlights). DroneMoved carries
 	-- the cell so a silent Vector attribute cannot park the drone.
 	local Net = require(script.Parent.Parent.Net)
-	Net.on("DroneMoved", function(plotIndex: any, x: any, y: any, duration: any)
+	Net.on("DroneMoved", function(plotIndex: any, x: any, y: any, duration: any, serialValue: any)
 		if type(plotIndex) ~= "number" or type(x) ~= "number" or type(y) ~= "number" then
 			return
 		end
 		local cell = Vector2.new(x, y)
-		lastMoved[plotIndex] = cell
+		local serial: number? = if type(serialValue) == "number" then serialValue else nil
+		lastMoved[plotIndex] = { cell = cell, serial = serial }
 		for plot, plotVisual in visuals do
 			if plot:GetAttribute("Index") == plotIndex then
+				if
+					not DroneSignals.shouldApply(
+						plotVisual.drone.serial,
+						serial,
+						not sameCell(plotVisual.drone.cell, cell)
+					)
+				then
+					return -- the attributes already delivered this move (or a newer one)
+				end
 				if type(duration) == "number" then
 					plot:SetAttribute("DroneMoveTime", duration)
 				end
 				local from = plotVisual.drone.cell
 				local liftOff = plotVisual.drone.move.Value.Position - Vector3.new(0, DRONE.HoverHeight, 0)
-				updateDroneTarget(plotVisual, false, cell)
+				updateDroneTarget(plotVisual, false, cell, serial)
 				local to = plotVisual.drone.cell
+				hopSound(plotVisual.own, from, to)
 				if
 					plotVisual.own
 					and plotVisual.fullFx

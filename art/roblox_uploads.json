@@ -1,0 +1,758 @@
+{
+  "art/audio/ambient.ogg": {
+    "type": "Audio",
+    "sha256": "315e50bedc3d40ef23fc14cec523ab94214c6e4c25f9a4828a4903621ad1ab4b",
+    "assetId": "95329956277982"
+  },
+  "art/audio/charge.ogg": {
+    "type": "Audio",
+    "sha256": "a650ffa3b1e6802c375804904ed538460bcabcc66329fa04080ef3b0cedd64c1",
+    "assetId": "96372285494734"
+  },
+  "art/audio/click.ogg": {
+    "type": "Audio",
+    "sha256": "a3f97ad94ce446af1e03673e18a16add56ebbeb2b1ec6e0ffcd30591cf22a828",
+    "assetId": "86251483589180"
+  },
+  "art/audio/deposit.ogg": {
+    "type": "Audio",
+    "sha256": "3d9be34bd368eee9009f99671655eae16eea008bf64d27a4047c909084b12bc9",
+    "assetId": "83569891644810"
+  },
+  "art/audio/dig.ogg": {
+    "type": "Audio",
+    "sha256": "6f9a8da92fa8d5f88f0501526a3d199c5f5b6bdfe5e95aa9ade31aba7c2211ac",
+    "assetId": "82527451388906"
+  },
+  "art/audio/error.ogg": {
+    "type": "Audio",
+    "sha256": "413d370b520ac7ff3717077b3e7a8c9f0833be357558e79808ff73fc15d38ea9",
+    "assetId": "88262049590710"
+  },
+  "art/audio/fossil.ogg": {
+    "type": "Audio",
+    "sha256": "ba52527cfa0361fcd09e76c77b78d70abbf525240dd4cda72eb5889026a85875",
+    "assetId": "99147665758035"
+  },
+  "art/audio/harvest.ogg": {
+    "type": "Audio",
+    "sha256": "c3d3d461f10841aec81baae403ee7668cf2545a59c74d9b4760c44e0e76a5f01",
+    "assetId": "130086974350436"
+  },
+  "art/audio/hop.ogg": {
+    "type": "Audio",
+    "sha256": "2a17e5cae483470af8098ad1adb1497c56dc602e763de0471db1c7c4c99677c4",
+    "assetId": "133437677566894"
+  },
+  "art/audio/hover.ogg": {
+    "type": "Audio",
+    "sha256": "e0156d5f1b43db49aeef14a3ba62725921474fed58964c18ccde1c59e58d6fec",
+    "assetId": "130193113100028"
+  },
+  "art/audio/land.ogg": {
+    "type": "Audio",
+    "sha256": "dd3ec4a2411b942cc7e044db7724b6fda3bba35a66861332223386628f44481f",
+    "assetId": "89064459348248"
+  },
+  "art/audio/plant.ogg": {
+    "type": "Audio",
+    "sha256": "705b8246fc181ca7441fa48d1b69dbbd1ec50ab06c46c0e8011f69520d6fc3f5",
+    "assetId": "136375164993905"
+  },
+  "art/audio/purchase.ogg": {
+    "type": "Audio",
+    "sha256": "448c87cc123638a5584580b53bd40fd5fa5d2fd45084a0b05f00a4769ba81720",
+    "assetId": "103635677731633"
+  },
+  "art/audio/refine.ogg": {
+    "type": "Audio",
+    "sha256": "0e4ad6cec6f6377922e8524128814efa6eb0eb36f749ac187b28c83f5c1f2043",
+    "assetId": "87190890184841"
+  },
+  "art/audio/research.ogg": {
+    "type": "Audio",
+    "sha256": "0630a2d9f3035e6f965130fe469eb195172a3c0764a1746f9c84a66d4805943e",
+    "assetId": "130060828786274"
+  },
+  "art/audio/unload.ogg": {
+    "type": "Audio",
+    "sha256": "90a59f9809863a6a68fe8756c087f6439661ff6999e345b6c443845312f146cd",
+    "assetId": "84465051508567"
+  },
+  "art/audio/unripe.ogg": {
+    "type": "Audio",
+    "sha256": "2723cd84e62ba0e0845cec4d5dbc6e96d6e4ffd67c5493a4cab96ce2fd60b52c",
+    "assetId": "110044469643217"
+  },
+  "art/audio/water.ogg": {
+    "type": "Audio",
+    "sha256": "788df4ee94442e03f850907b010d13b430e0d84854e30977ed2a880ba1be393c",
+    "assetId": "88923676276226"
+  },
+  "art/textures/detail/Bark_Color.png": {
+    "type": "Image",
+    "sha256": "1eef5de9d4e73d894944c28a9545ba1ce8806bae6812415e3407a7263b5c61cb",
+    "assetId": "137741489041931",
+    "decalId": "110067895595297"
+  },
+  "art/textures/detail/Bark_Normal.png": {
+    "type": "Image",
+    "sha256": "a3406c1138920d23aa9f11deefc9533969cb1493ed68c260881108591e7cfbcd",
+    "assetId": "72618484024794",
+    "decalId": "78304093820749"
+  },
+  "art/textures/detail/Bark_Roughness.png": {
+    "type": "Image",
+    "sha256": "dec01157a71052c85c55664e960aaffbef8060db4cfeabf4d3c54f5f204bce22",
+    "assetId": "112066533260198",
+    "decalId": "132206300396315"
+  },
+  "art/textures/detail/CropLeaf_Color.png": {
+    "type": "Image",
+    "sha256": "afa684fc8b3c22003fbf1e5ba0cf0e85ce85b1db5c53517f04fd85ffd4a061dc",
+    "assetId": "87467220873766",
+    "decalId": "76019930150577"
+  },
+  "art/textures/detail/CropLeaf_Normal.png": {
+    "type": "Image",
+    "sha256": "8e9b62062e0854e7869d91efead21b9d983a6c0749d8c6d6d8a1e5db414f588a",
+    "assetId": "80609124105787",
+    "decalId": "121919059439860"
+  },
+  "art/textures/detail/CropLeaf_Roughness.png": {
+    "type": "Image",
+    "sha256": "66343832fc1573527da4e16b4cf5c1d96c1b621e78ac96c6dd215b3f81ec99a8",
+    "assetId": "71152092824800",
+    "decalId": "85760150514539"
+  },
+  "art/textures/detail/CropSkin_Color.png": {
+    "type": "Image",
+    "sha256": "72f280981f31202541099747116ccdc1038728c15cb08cc8ca4b9c051cae25d3",
+    "assetId": "131356565134404",
+    "decalId": "127545110829711"
+  },
+  "art/textures/detail/CropSkin_Normal.png": {
+    "type": "Image",
+    "sha256": "0287264975c83fc39fe09be5b2e899bfae7abc8d84093898d3deb060382de641",
+    "assetId": "132644860929478",
+    "decalId": "120657855185933"
+  },
+  "art/textures/detail/CropSkin_Roughness.png": {
+    "type": "Image",
+    "sha256": "9780732aa4e6d54d030dc9c5b0e6d97079f6007ff4e46da6c14aa9584136769f",
+    "assetId": "75529294899473",
+    "decalId": "84326344253730"
+  },
+  "art/textures/detail/DroneHull_Color.png": {
+    "type": "Image",
+    "sha256": "d5c9ff01cb33b2a8ce9723ef09368be061025e8ecf19411306e328152f46980c",
+    "assetId": "83433245920072",
+    "decalId": "71999394790458"
+  },
+  "art/textures/detail/DroneHull_Metalness.png": {
+    "type": "Image",
+    "sha256": "8f336a5e03ed5b64f6f0acfecea792202c39f6b361dd422ede40c6160858f84f",
+    "assetId": "125558056703491",
+    "decalId": "119957651739832"
+  },
+  "art/textures/detail/DroneHull_Normal.png": {
+    "type": "Image",
+    "sha256": "9b659cf8f0c5ded728875148d6bd24fbe159f1f04025e51cd51ba1167e0cc812",
+    "assetId": "84390261022969",
+    "decalId": "105024335340077"
+  },
+  "art/textures/detail/DroneHull_Roughness.png": {
+    "type": "Image",
+    "sha256": "bd458b6c8a3af9cac6673b6295fcd127e833ae628dcc0c32b9b61773bce0487f",
+    "assetId": "137985620561851",
+    "decalId": "100858453692348"
+  },
+  "art/textures/detail/Planks_Color.png": {
+    "type": "Image",
+    "sha256": "5f6e913d62638d1b2a4e305caf1da370e3e5aefa2305d3f52b57163a969d9ae5",
+    "assetId": "94812881719905",
+    "decalId": "128004037327123"
+  },
+  "art/textures/detail/Planks_Normal.png": {
+    "type": "Image",
+    "sha256": "56a90a5aa728e9f49e9e3de8378a9430154f39e782057734eda6f9875d374644",
+    "assetId": "124116781023057",
+    "decalId": "70481596837113"
+  },
+  "art/textures/detail/Planks_Roughness.png": {
+    "type": "Image",
+    "sha256": "554f22ca03a2211925e07bf1c874a12e9479634c47d4a33bd3184283fd2df1bb",
+    "assetId": "127360693009322",
+    "decalId": "79460830913990"
+  },
+  "art/textures/detail/Shingles_Color.png": {
+    "type": "Image",
+    "sha256": "63e5c996d7fab542bcb8be1fec2ac82c3b7fa0791fa59258d39fe95816410022",
+    "assetId": "122120961973456",
+    "decalId": "102300364553576"
+  },
+  "art/textures/detail/Shingles_Normal.png": {
+    "type": "Image",
+    "sha256": "1f0649442b243d3447434228d7cc7dc71a6960816cd113b34a051f1e9ab99fa0",
+    "assetId": "83498660481508",
+    "decalId": "97322983331381"
+  },
+  "art/textures/detail/Shingles_Roughness.png": {
+    "type": "Image",
+    "sha256": "cfe35ffe11463dc53a9718812358e8bcb5b5249030e49b06dfc6637efe454cfe",
+    "assetId": "135993855976336",
+    "decalId": "81949784324848"
+  },
+  "art/textures/detail/Stone_Color.png": {
+    "type": "Image",
+    "sha256": "79750e5197c37fb3658cca5c469696c76b330052da23756ca77728e409d81b72",
+    "assetId": "92221961116611",
+    "decalId": "103497475102613"
+  },
+  "art/textures/detail/Stone_Normal.png": {
+    "type": "Image",
+    "sha256": "6bf4718c1f7437be51563c10bda50da3ae6b84929c1c902758f890ad45a16a90",
+    "assetId": "101978240085090",
+    "decalId": "117403959207266"
+  },
+  "art/textures/detail/Stone_Roughness.png": {
+    "type": "Image",
+    "sha256": "f81ef7976ce31e90680e9d2934e339677c9264f988775a47da7914fce5513934",
+    "assetId": "84810094472955",
+    "decalId": "85693167750777"
+  },
+  "art/textures/soil/SoilDry_Color.png": {
+    "type": "Image",
+    "sha256": "ba39ce17eaa8c9d0f85d4931f30e2f9490782dc1bca114689ab74c8474107923",
+    "assetId": "106422656743698",
+    "decalId": "102138184116285"
+  },
+  "art/textures/soil/SoilDry_Normal.png": {
+    "type": "Image",
+    "sha256": "93085ba119ac4e290fc73ed09f7db20527db40b0026af95de7bac35982102de8",
+    "assetId": "73287108417203",
+    "decalId": "128766524213414"
+  },
+  "art/textures/soil/SoilDry_Roughness.png": {
+    "type": "Image",
+    "sha256": "a1ecebc6b9004625c1bf6df493cecc431e4464ec7911dc2f8b49e7ba7d62a69e",
+    "assetId": "86104241589387",
+    "decalId": "91871048480962"
+  },
+  "art/textures/soil/SoilDug_Color.png": {
+    "type": "Image",
+    "sha256": "857147d5d13561d580c8e8e339bc5ddcd04e64fe16702ddd895f64ed4ad69415",
+    "assetId": "131107940399154",
+    "decalId": "103136800745755"
+  },
+  "art/textures/soil/SoilDug_Normal.png": {
+    "type": "Image",
+    "sha256": "6924183a5e7e14dce3e95af84238bc32eff104763ef6774bace230f1704883ec",
+    "assetId": "133386917146662",
+    "decalId": "127172057295095"
+  },
+  "art/textures/soil/SoilDug_Roughness.png": {
+    "type": "Image",
+    "sha256": "07419412dd47652b21ce61b29f460a3fdc86970fb441c3f909a6d03d172a118e",
+    "assetId": "95879206415814",
+    "decalId": "88896417042005"
+  },
+  "art/textures/soil/SoilTilled_Color.png": {
+    "type": "Image",
+    "sha256": "e165c156fc710542a2f9f8b6d92c908484f5b592cce807e8f2a85ed235e776d6",
+    "assetId": "85139880785835",
+    "decalId": "130061448036325"
+  },
+  "art/textures/soil/SoilTilled_Normal.png": {
+    "type": "Image",
+    "sha256": "e2290648396159f3983670ba56b8066a8b8cae8deada6c6d6aa16c122713c14b",
+    "assetId": "106275953121332",
+    "decalId": "114666567321015"
+  },
+  "art/textures/soil/SoilTilled_Roughness.png": {
+    "type": "Image",
+    "sha256": "e80ac3b68db7a52c7cd172e3be6a0defca1db8b769f41ed5de9ab4f696bf5b5f",
+    "assetId": "136178664336996",
+    "decalId": "131790272904075"
+  },
+  "art/textures/soil/SoilWet_Color.png": {
+    "type": "Image",
+    "sha256": "b482f9033a65ad9436adc96ec03c9ce72d05d89bf474f577ab932ef3f363c594",
+    "assetId": "70428842046970",
+    "decalId": "107074388830650"
+  },
+  "art/textures/soil/SoilWet_Normal.png": {
+    "type": "Image",
+    "sha256": "a4e8636901779bacf036caf81d51c95bd2bdb323d4a293aa9098cd8bd5c881eb",
+    "assetId": "110711013310399",
+    "decalId": "72870995813175"
+  },
+  "art/textures/soil/SoilWet_Roughness.png": {
+    "type": "Image",
+    "sha256": "0d89e9338a5156d234b4de7f69b8585a3283694f08b0162a5620785de99680ab",
+    "assetId": "131063888716826",
+    "decalId": "120444409932415"
+  },
+  "tools/blender/out/Crops/cactus/growing.fbx": {
+    "type": "Model",
+    "sha256": "856ff94ee28a28323d0cf47c0483819bcb243dce9a04334291f1cbd798cf7f23",
+    "assetId": "119389521485761",
+    "sheet": "96db0828b3e85bc4d19eae47dd85008583fceeef975bbb36c15881c6f3286100"
+  },
+  "tools/blender/out/Crops/cactus/ready.fbx": {
+    "type": "Model",
+    "sha256": "3ac04c52a9348738d3c0da2081a7d2bad4c3c189d460c89c18769e07ca5799a6",
+    "assetId": "140684544573193",
+    "sheet": "c647d12cd336e85fa9ca468d663e63c7edf188e2fdbb384a7efae4ca8a00038a"
+  },
+  "tools/blender/out/Crops/cactus/sprout.fbx": {
+    "type": "Model",
+    "sha256": "cc691b48b8c1e6edaadd78f926991626aef692c55bacb12496efc5a09641378b",
+    "assetId": "94333119338257",
+    "sheet": "015478544eba2a94bfdc07e0c82a0e7d4112cb26e7003edc1c911ecad12a97dd"
+  },
+  "tools/blender/out/Crops/carrot/growing.fbx": {
+    "type": "Model",
+    "sha256": "f8d459b4c01d224aa527117aced18f5595e2f63d6e9ed68bf41a90065e91c178",
+    "assetId": "90647828569962",
+    "sheet": "8a5682ccd8bab8680f5361a40c34b4f21d2dd0982fce7dbdca11b8b832812818"
+  },
+  "tools/blender/out/Crops/carrot/ready.fbx": {
+    "type": "Model",
+    "sha256": "efc2fcfccd6820c0956bc88986157ad1306d2d2235fd4ea6867aac77b8344218",
+    "assetId": "138444833643549",
+    "sheet": "e11f53b3eb47d621ac3f0278aa7878b2090f102cb2dc4642f588738868c94c45"
+  },
+  "tools/blender/out/Crops/carrot/sprout.fbx": {
+    "type": "Model",
+    "sha256": "765884a01cdd4fdcc9627ff9b972185a8b6bee1390ab746e459df513b3e31b8a",
+    "assetId": "89614327767692",
+    "sheet": "144ced3d448fd10c6cca5f3558e767529be6cce9c085506c675755586e0d2bdb"
+  },
+  "tools/blender/out/Crops/grass/growing.fbx": {
+    "type": "Model",
+    "sha256": "62ef52ec25ce4adf8725e3a85cea350daa280ca36c928dce46b8f076d9b4a4c0",
+    "assetId": "126601170588235",
+    "sheet": "0b89899ed118e7a9bb3319156dd744154a9ecd6ae9b887161fc8bbca2e608604"
+  },
+  "tools/blender/out/Crops/grass/ready.fbx": {
+    "type": "Model",
+    "sha256": "5dda2dc40e787a7f13970bbc0f64d7f598f020e1a6c109cb1756f10f6ae27e46",
+    "assetId": "83535991689759",
+    "sheet": "852ad0252b239e7f313ea826f51717bad0efcf3e65af2093a407ca540912b5a9"
+  },
+  "tools/blender/out/Crops/grass/sprout.fbx": {
+    "type": "Model",
+    "sha256": "692e7b1ee2214bc6c8775cb08ae647eb3b31d8f619c9d4e8044859be00b4e77d",
+    "assetId": "101161816888611",
+    "sheet": "20d130ecfa7866b751fb71d9291c158113a05894a3709689b74d01ec12120b51"
+  },
+  "tools/blender/out/Crops/pumpkin/growing.fbx": {
+    "type": "Model",
+    "sha256": "fd8188c0ca00f9fd8d99893de8c9b4941108860d7c8191ff3f2b67125df9b13f",
+    "assetId": "112872656585984",
+    "sheet": "2d2d34682e98606b879b83000568649b6b8409ed95a83f291b650ea31aafe52f"
+  },
+  "tools/blender/out/Crops/pumpkin/ready.fbx": {
+    "type": "Model",
+    "sha256": "1758a06df80d2b5b1409f7203c5bc8b53393038e0779eb0d7e4ec7b8c8fda679",
+    "assetId": "72935268160654",
+    "sheet": "dc73766a5e17d5239799e39d1061ebadd6764bd11694c369ce59ceba8d412de9"
+  },
+  "tools/blender/out/Crops/pumpkin/sprout.fbx": {
+    "type": "Model",
+    "sha256": "b3884bec0748f94a194686cf0bea5c70a978742dd545901530761c5eda90cb6e",
+    "assetId": "138039675561653",
+    "sheet": "7700c5f0482b5aa2ead25fde481f78df0cf7dd0e263ed206c3f7e5e982920eff"
+  },
+  "tools/blender/out/Crops/sunflower/growing.fbx": {
+    "type": "Model",
+    "sha256": "a5f77a56428371a711592038fb6dbe6570c638619a21ac5f421b47c524acf35d",
+    "assetId": "76901316827161",
+    "sheet": "fc65a53dec720266b218f319c8f3c3113958572e39ce40b2e055044b10de0137"
+  },
+  "tools/blender/out/Crops/sunflower/ready.fbx": {
+    "type": "Model",
+    "sha256": "b3492b521d27d1d198e6a30747c4eb7f38422731e142ebd1d0f93e1dfb82faf7",
+    "assetId": "84512868759194",
+    "sheet": "eda5c6f1bbfe61dfcb6e0416bda2da212fc2d447e93e5257dcd5f3c91fbcd5f7"
+  },
+  "tools/blender/out/Crops/sunflower/sprout.fbx": {
+    "type": "Model",
+    "sha256": "a52d1f9dbff0dac823c7528acdbdd613c08f9d91673f0ac1624e5015d1865274",
+    "assetId": "87374440380050",
+    "sheet": "fe538d2c37b22240fc1327ba6a68bd3ea0c86f94adefc5d977303fd9773cfaf9"
+  },
+  "tools/blender/out/Crops/tree/growing.fbx": {
+    "type": "Model",
+    "sha256": "e3c6512971fcce498133b1c3d829c412adb09923c449e26d37fdad58b2bb42f8",
+    "assetId": "108507925569906",
+    "sheet": "a0965b00b45f3d515329cfaf8e1743b6621cebea4757144228a8664a50e60d13"
+  },
+  "tools/blender/out/Crops/tree/ready.fbx": {
+    "type": "Model",
+    "sha256": "61fd481cc41e037f6695a54bb9ccefa2e39071f34ea43abbf0298a9e51c65583",
+    "assetId": "86807707428244",
+    "sheet": "bbf5a7950485c378d1812bb8d62e8802aef18c91f8f7bff359ed285b73882e73"
+  },
+  "tools/blender/out/Crops/tree/sprout.fbx": {
+    "type": "Model",
+    "sha256": "66139336fa13b62445b2d8e3affd7c7396a3665d7dcf9e72d644daa47703f079",
+    "assetId": "102276579811665",
+    "sheet": "1ddc5e6301afd47bb54dee23f4b49ec7e5397fb62779632ab22bf55665f51a15"
+  },
+  "tools/blender/out/Crops/wheat/growing.fbx": {
+    "type": "Model",
+    "sha256": "5deee465b1d59fffa02721e8b60d329fb083d5f4c11aa8973f16e8057cf86798",
+    "assetId": "98834921692689",
+    "sheet": "8032e5cea5ceaade12762c927c386a9fe49414f515c622259cb7d23a2f5ecca6"
+  },
+  "tools/blender/out/Crops/wheat/ready.fbx": {
+    "type": "Model",
+    "sha256": "cb81e33585831aa5d86d448e37075a81bc73e0094fa424ba2a775d86c909bf55",
+    "assetId": "114271839171532",
+    "sheet": "c49f5e7fc45376c5fe8323985a39dd7e38e9639c927c6eb8332a7bb279ac54b7"
+  },
+  "tools/blender/out/Crops/wheat/sprout.fbx": {
+    "type": "Model",
+    "sha256": "719dad56eb0333d3774621232dd64b90b655a9b175efcdb7540f202f5765d468",
+    "assetId": "101510874106414",
+    "sheet": "e8687fe1a4f800dc74d23290f7fadd5b7f4c451d65b8cd4f944b5a6429005aff"
+  },
+  "tools/blender/out/Dressing/FencePost.fbx": {
+    "type": "Model",
+    "sha256": "e2eaba175cf5d7d7906460db0b90aa4c788411879b48e3894e6f3ef6bf9384de",
+    "assetId": "124337032473190",
+    "sheet": "08378524fb70e93ab9348987c3730cdd74682cf1d2bc1985c95ebd9be792953a"
+  },
+  "tools/blender/out/Dressing/FenceRail.fbx": {
+    "type": "Model",
+    "sha256": "d75b9016b35f90098d2d44b412cec2242f4cf72705f8ec394f2febf044038d44",
+    "assetId": "119039701268991",
+    "sheet": "08326519794a0f87ea09c049a4d028853763954940d7d9196447c4ea3632c3ec"
+  },
+  "tools/blender/out/Dressing/SignPost.fbx": {
+    "type": "Model",
+    "sha256": "f008b7951b5eff51ba310d1ba67600e3fed735ea421da1083a575bb2a5238b5e",
+    "assetId": "93215509482965",
+    "sheet": "700be86371f1dc2eda2d0ae97008418d157709d6ec333d41c88d2b103bbc4bc2"
+  },
+  "tools/blender/out/Dressing/Walkway.fbx": {
+    "type": "Model",
+    "sha256": "5685911cf7da1b75439abb560d80693281bf9aa626e38a750d3464206c8cb3aa",
+    "assetId": "136265072905858",
+    "sheet": "190add6facad141b29a798853468dbd77dd1239cc5f542327d5dbe89034df0e5"
+  },
+  "tools/blender/out/Drone.fbx": {
+    "type": "Model",
+    "sha256": "ac3c55162d6568fe934c3be38007293d18e0bcb51b4820e365793c18eadc7819",
+    "assetId": "88645045895623",
+    "sheet": "94542c9d0a82daba7c9b81f940b2df4313726452ff5f3e164f57409144e949ad"
+  },
+  "tools/blender/out/Hats/antenna.fbx": {
+    "type": "Model",
+    "sha256": "52d613ba4095bc86e04ef88f746823960f8cb86d14fd0a6a13ac721df05e9d11",
+    "assetId": "114353795164122",
+    "sheet": "4f4713343a16b12140289c457a72f09a90dbbeb3b6887a265c4b5ea0a4cd645a"
+  },
+  "tools/blender/out/Hats/halo.fbx": {
+    "type": "Model",
+    "sha256": "e54c82e04ced5b66d781781b26d2998c2bad664ac151c89c933d33a68756832b",
+    "assetId": "136898675659443",
+    "sheet": "1a772d572e51fc28abf11efc92a8124249b0507ffe249a908d1b590843630fb7"
+  },
+  "tools/blender/out/Hats/propeller.fbx": {
+    "type": "Model",
+    "sha256": "07f6691e4ce533bf77f769dc65aa4a15af3b99e824cb777b97f4a53ea2449502",
+    "assetId": "81418382794881",
+    "sheet": "aed1a3e3c8511f6b805a3f6e8e4059bc49872c5f1001050337965fa9bc65293d"
+  },
+  "tools/blender/out/Hats/straw.fbx": {
+    "type": "Model",
+    "sha256": "e67b3d686ce472b3ee4ec6ea76657b6cdcbc5329b0f0c57edd849643b3ee7372",
+    "assetId": "82920434206403",
+    "sheet": "2e446de254b72385793f6a3a3d889d182a79433cc3e67c2457b7bbe442c3fe6f"
+  },
+  "tools/blender/out/Hats/tophat.fbx": {
+    "type": "Model",
+    "sha256": "17521cb21d4a17e517031bb96a724bc9d59d9ce0dc94722af81377856189e2b1",
+    "assetId": "111005172538281",
+    "sheet": "eb050a14c44b5312a28f0a277863d1de103214a0218027db52700a9161a8c83d"
+  },
+  "tools/blender/out/Map/barn.fbx": {
+    "type": "Model",
+    "sha256": "7f03e60e7bb2e795a61e1a50b01eaa186346997a53c83f0e1c6b6786b88a6ccc",
+    "assetId": "92451334376487",
+    "sheet": "eee0728f544d247fceb7620b639ef25631e2b7fae814e61a607694b30ef15588"
+  },
+  "tools/blender/out/Map/barrel.fbx": {
+    "type": "Model",
+    "sha256": "f9d06b8466552c5c65f42707fbf665ea8042834e5ba5ae32200decda92f5ee02",
+    "assetId": "91833046404635",
+    "sheet": "32287821a4d68a12d06788f33238e21594a4aee7e789069f69707f19ed0702f3"
+  },
+  "tools/blender/out/Map/bench.fbx": {
+    "type": "Model",
+    "sha256": "195d33f54f0ed362310124c612c536f272e3e1ce8378679e5eed3a9ec5751964",
+    "assetId": "81111041162951",
+    "sheet": "165bfa0260896e0eec577d096aa950fdb6db1cb0a039caaf8337a5925df8dfc8"
+  },
+  "tools/blender/out/Map/berry_bush.fbx": {
+    "type": "Model",
+    "sha256": "0fd2d846db26c44a1592db95f95bf701c67ecfcf02e8518684050ef9a951fe36",
+    "assetId": "98868583437971",
+    "sheet": "69b0f5d4c6bf682aa4a20d64b4b6da537bfb341eeafaec67e34acb865f9f18c5"
+  },
+  "tools/blender/out/Map/birch.fbx": {
+    "type": "Model",
+    "sha256": "dd2ddf5422e7fb3956203f51eae20e8bbc3ffe1a173362790b56d6280f71b8b7",
+    "assetId": "92539798298037",
+    "sheet": "89be0fd4ebb21089b2769b0a5de65296ac950a20ad5875eae3b0dd40767af8fc"
+  },
+  "tools/blender/out/Map/bush.fbx": {
+    "type": "Model",
+    "sha256": "953ec5b7ce51bb66145b88797935801fa4efadfab55aefe849ab8434ae737a7c",
+    "assetId": "83902743629462",
+    "sheet": "b248d61431de37c400838d458a6548ff792e437ad2c471eec9d1bd65d121777a"
+  },
+  "tools/blender/out/Map/cart.fbx": {
+    "type": "Model",
+    "sha256": "2d56c9b0d0e1407556781ba031785b729a1a6328032bc4248a1d737c0d3a5da4",
+    "assetId": "78991793846057",
+    "sheet": "ed545f5a384b1f7a2159f087d7ab6a1fc92d7c0a89b9a769552ec78848e2e44c"
+  },
+  "tools/blender/out/Map/chicken_coop.fbx": {
+    "type": "Model",
+    "sha256": "5752412bdaaef8d33ba72744bb147d0e79d32af2e8b80b6e7b05898f628b758c",
+    "assetId": "92391158329410",
+    "sheet": "b9894540fa3328a778d3c81c85d3bb3d698d5798fc7176dc2f7d16e97165f715"
+  },
+  "tools/blender/out/Map/crate.fbx": {
+    "type": "Model",
+    "sha256": "4925b000e5f42de47548e7c2fafd1b2c9da17d0d79eb56f85796ec15b36b24d6",
+    "assetId": "94847728062750",
+    "sheet": "ed2e617f2297d3d4c41afa80f8b2e6ca6992031f7b11e341be4d1a5f8cfe7ac1"
+  },
+  "tools/blender/out/Map/farmhouse.fbx": {
+    "type": "Model",
+    "sha256": "3ce19b623e15a240b4b23f454563b510c39e70181eb91224c36316c386248336",
+    "assetId": "139732302467559",
+    "sheet": "5e2bd6f868697e66efa9bca3e41a131c4f0ee0570dc91e20aed33579ba6df4f7"
+  },
+  "tools/blender/out/Map/fence_segment.fbx": {
+    "type": "Model",
+    "sha256": "f2cfa95bd1120d1bb2d38e613929d192ce0d5c8d894445329b1b59330428012a",
+    "assetId": "139633763951508",
+    "sheet": "08c9118dd9af7cd42ed777edcab8053db2ae740470cf7e3eda5d569d69cc77d5"
+  },
+  "tools/blender/out/Map/flowers_pink.fbx": {
+    "type": "Model",
+    "sha256": "d838d3986d7508ee574a262dc532c158afb139a367f816c3224c917793f1e616",
+    "assetId": "139808358254818",
+    "sheet": "aa5939f4622082db6297c3cd31019fab6c5bf397bac0537c65e52ed827006ecd"
+  },
+  "tools/blender/out/Map/flowers_white.fbx": {
+    "type": "Model",
+    "sha256": "7473978899f1acd4bbc34d459249fa82f81f264d6955d4e39934993dc39b068b",
+    "assetId": "134932965741870",
+    "sheet": "c1d195486d1d8c3132490249d8ba07e50ed4d660ec4c91f52fff3b0207819bb7"
+  },
+  "tools/blender/out/Map/flowers_yellow.fbx": {
+    "type": "Model",
+    "sha256": "05e85c6eeb9aa5fea3cc51773e8537ff6175c3fdc6ef7f3729db82728a4ed4ca",
+    "assetId": "135398811136278",
+    "sheet": "c73d52817955079a3ebbb68595c10f70a7dd8d1250ed3e14fe9608022b59ebad"
+  },
+  "tools/blender/out/Map/garden_bed.fbx": {
+    "type": "Model",
+    "sha256": "83f5777f8091ad6556a30f97ef176bb76839c1276c1827fdd0afe72e91f276b1",
+    "assetId": "117809219388492",
+    "sheet": "0ddb4d21d899a95ad32f8f6e5180c40b428446c4ca7defdeaaadc12db0df5790"
+  },
+  "tools/blender/out/Map/grass_tuft.fbx": {
+    "type": "Model",
+    "sha256": "fdcf164911431f451899a50891057a5b283c0cae9f3461be9556fc9d38ee43c3",
+    "assetId": "128401689241202",
+    "sheet": "238a5f8d09628e1660e82981cd22663e38b9bd6808729af91fd22d969c1b8c52"
+  },
+  "tools/blender/out/Map/greenhouse.fbx": {
+    "type": "Model",
+    "sha256": "ecad9605a9cb1705e3b77d5847abf7c79e2cef059bbc49cc8d537476693f66d4",
+    "assetId": "139007784503689",
+    "sheet": "90a0e0701cf543bfa6e3d7e2b3f734593271cb42fa25222360b0c8cd6c62f267"
+  },
+  "tools/blender/out/Map/hay_bale.fbx": {
+    "type": "Model",
+    "sha256": "99622759f2505a0f7db5c0e0427a85a2a189b0713260ebb9e6f822e90b6b219a",
+    "assetId": "119850562048022",
+    "sheet": "07952145c9da8729cdcbf3c95ba4ab38e413428a88f56cff3953fbf9d399b844"
+  },
+  "tools/blender/out/Map/haystack.fbx": {
+    "type": "Model",
+    "sha256": "80f39fbdf07583520a6ebae382596b496d24ffa7bd790b7480ff7f236b0811a6",
+    "assetId": "76007481830096",
+    "sheet": "3f0583496f9bd5cfa127c7085db241c40a6a23cde4b33aa52a151627cb7c1c12"
+  },
+  "tools/blender/out/Map/hedge.fbx": {
+    "type": "Model",
+    "sha256": "0ea2d0cc250622ad7cfcd5a7fb81d3b4c5464d1b207e91122dd1bf8dc878643c",
+    "assetId": "105265854097844",
+    "sheet": "028a892bbffec4ae0c90f240ac242f86af5c4286fda9a0943caaad73f22e7164"
+  },
+  "tools/blender/out/Map/hill_a.fbx": {
+    "type": "Model",
+    "sha256": "6f86e67e37055e0a6832ed804afa939afa4b6224b27d91504a5e972f119038aa",
+    "assetId": "135982910063896",
+    "sheet": "9260569ad14fa68110f57098fb2dda0c25e49a144ac45532321cdd723b0ce904"
+  },
+  "tools/blender/out/Map/hill_b.fbx": {
+    "type": "Model",
+    "sha256": "b3d0a39b59c4a1ea478a47857723ffeeec607336dcf0c53636af62c9af573810",
+    "assetId": "107838735667859",
+    "sheet": "eea1071d462782d89dc563dc98e43afd4b0851b93af152884b8ead31e2871a93"
+  },
+  "tools/blender/out/Map/hill_c.fbx": {
+    "type": "Model",
+    "sha256": "fc0ff1c8e6f4ba80bd461011ff6f78ef39638831491133512c46579360a825a6",
+    "assetId": "135363798813094",
+    "sheet": "768527fca537cd2979f09de5564a3647e68ca79be4ab0bcd7f82dda4d28ab6fc"
+  },
+  "tools/blender/out/Map/lamp_post.fbx": {
+    "type": "Model",
+    "sha256": "5fcadac7f105afdc1bad23c831e846291b7f14d482c452d8d98f6337d3b7f824",
+    "assetId": "115360054121404",
+    "sheet": "e90b060166b0ffc5d88964520ddf90f64157b69dcfe865309d7e0b23418a462d"
+  },
+  "tools/blender/out/Map/log.fbx": {
+    "type": "Model",
+    "sha256": "99563c7b4e8db0e22204e2f913c86a008c3093f4e1c8a1efb4e475d74054ae81",
+    "assetId": "114254940539566",
+    "sheet": "8b8e280dcbbef4efcfa7f3db0a6ea8063e20933dc990954e43128f1327a8a0e1"
+  },
+  "tools/blender/out/Map/market_stall.fbx": {
+    "type": "Model",
+    "sha256": "222ef684237526b542cdb614b2152435435463de36f27ff5e5c09adcb6797b0b",
+    "assetId": "124020167219269",
+    "sheet": "06cd9418071b4c61f0e25e7249213b0eb4cb79075104ae8707657c9d85611ff3"
+  },
+  "tools/blender/out/Map/mushroom.fbx": {
+    "type": "Model",
+    "sha256": "1e9edb1f98beabe6259eb512d3cfbbcad1c0d586749bb4e5ad38cd9a63f922ac",
+    "assetId": "75454652741223",
+    "sheet": "b057ec2d34d17b8b8d3a7a5b92a0feafb5a9449cd21cb1ac4ee4be26bb52afa7"
+  },
+  "tools/blender/out/Map/oak.fbx": {
+    "type": "Model",
+    "sha256": "0c5c20c1c3fab8aa1c39fba7de9ed267144575af623d4dd5e7cb756e88e34cd5",
+    "assetId": "80668281975071",
+    "sheet": "80fbb661e1456854d8d30cffe288f4458b4d3fdfeb2817fc301519281159b65f"
+  },
+  "tools/blender/out/Map/path.fbx": {
+    "type": "Model",
+    "sha256": "dd62567134c411a14414c45f128903f59f3957384f63107502e6de8c5470a21b",
+    "assetId": "132617882432940",
+    "sheet": "a74876f20fcaaaedd45d8457f9d4f932450da48ce5792cda5da5d28b7a03378c"
+  },
+  "tools/blender/out/Map/pine.fbx": {
+    "type": "Model",
+    "sha256": "899e70c2d5a6f10b2c663388147d508ae5ec3407a493d06b4476efa6e5911dea",
+    "assetId": "138564466841735",
+    "sheet": "22157eacb93ba4c6c8656deb4392bb1f360e926f09b7d945ed782cf813b4bad4"
+  },
+  "tools/blender/out/Map/plaza.fbx": {
+    "type": "Model",
+    "sha256": "1687f9f4de78f941a1b5a77852723bf2022ac9d8e263890490c7879101c2fb94",
+    "assetId": "76077048259294",
+    "sheet": "1a5d5fe801c7131c34081ecc27aa55a2b95687107564f67f6ca72685f6693003"
+  },
+  "tools/blender/out/Map/pond.fbx": {
+    "type": "Model",
+    "sha256": "7e6813e18c9e28e6973a1895311befe62c7b4058ea1f3af2a6a7659ed50b7a25",
+    "assetId": "94852137603219",
+    "sheet": "c1deeb51ad206e5d6835c3ed0dd698a5b5337e228f9ba89441a11767030a52f8"
+  },
+  "tools/blender/out/Map/rock_large.fbx": {
+    "type": "Model",
+    "sha256": "2c11a35c69c6a028640f829a3dcec45a3a0bda31d27ce8c25e891aefb70af174",
+    "assetId": "139146772150537",
+    "sheet": "f37740118f89aadeb48a2d064f403d4df9a7ce171c7697e6b06ec5f64a52358c"
+  },
+  "tools/blender/out/Map/rock_medium.fbx": {
+    "type": "Model",
+    "sha256": "a438f2001b463f3bfff3ffaddb064576dd5568b34e96668af0e489b97c0352ed",
+    "assetId": "116926681281679",
+    "sheet": "68d124c1d31ecac91ee56f85a38e2c9559eee3d1fac137cb1c246c53d7322f2c"
+  },
+  "tools/blender/out/Map/rock_small.fbx": {
+    "type": "Model",
+    "sha256": "2f1ec23b31258188ce9df0c2cdeaf6627594a8ac57507a05fe38f404d7123032",
+    "assetId": "75907200398073",
+    "sheet": "39856729e42010b60a8e384f3e408d2db50a43b1593d85080006ca9ee3042957"
+  },
+  "tools/blender/out/Map/scarecrow.fbx": {
+    "type": "Model",
+    "sha256": "dec20c5c41f2518af81f874cd31b2ec48e4f65f2db5245dc085ec96070a1b4f6",
+    "assetId": "107666922819781",
+    "sheet": "9e932bec6c0a96403f752ec05fe28c0cf88cb5b4bf61dc62323b1f5e3208615c"
+  },
+  "tools/blender/out/Map/silo.fbx": {
+    "type": "Model",
+    "sha256": "d75004a56ee437baceed45fed26c629a36f681fb4fd4d16d3c492bbbf924af17",
+    "assetId": "120677000783823",
+    "sheet": "58c8cb58800eecca2673487f45dcb6e140224164161e96291b87751c33bdad76"
+  },
+  "tools/blender/out/Map/tool_shed.fbx": {
+    "type": "Model",
+    "sha256": "0cbec3f546d7f730a6d1ef3458cfb25682b91873e3d1e9e2f6325ac345b61a01",
+    "assetId": "78724829667820",
+    "sheet": "2e7a5b6fa7e3410145e0d7a1e1e34f3fd1c885edd9f1e718a19c399071e9d455"
+  },
+  "tools/blender/out/Map/tractor.fbx": {
+    "type": "Model",
+    "sha256": "59eabe45c4e74f6760f15b921489cc9213caff5fcb4d06b041a8c6ab7e034d16",
+    "assetId": "112453791146813",
+    "sheet": "1ec857d1174cea8238f9b6a25b0f740bbf2052ce1e1501925f171e3384d0b97e"
+  },
+  "tools/blender/out/Map/water_tower.fbx": {
+    "type": "Model",
+    "sha256": "6795cf56805f4c110d7eec7b16f03a76e3402003a03eaab0f004483e680172ae",
+    "assetId": "138867045463241",
+    "sheet": "109a843adc2ba63ea0b265f1102b9e204e1bd13895620bf37daf83b6336d24ac"
+  },
+  "tools/blender/out/Map/welcome_sign.fbx": {
+    "type": "Model",
+    "sha256": "db9a6546fb42748d5b992701f8d0978d23da22fbf350f9eb4d49f30db0bdd188",
+    "assetId": "135031733520070",
+    "sheet": "a070543b0c39d724ea459a78a81218cc9441c3d8fa1e1ae28e5a41f80b218eb5"
+  },
+  "tools/blender/out/Map/well.fbx": {
+    "type": "Model",
+    "sha256": "be0ab17d3dfb1bbcf7f48c108ce52de28d660633511c7192dc66147b03152f65",
+    "assetId": "125890704218461",
+    "sheet": "8406400cfb413fb15ad223c526081ce814ca2785017de0d30ec827476be6e075"
+  },
+  "tools/blender/out/Map/windmill.fbx": {
+    "type": "Model",
+    "sha256": "b204fa2bff00ef5912a50e36724cb915ece080533484da9d27568ac73b39e81d",
+    "assetId": "118292455910730",
+    "sheet": "455fd8712aa6cad2e58ef57376820f6cfce63bf613347511197b7b8e63db2359"
+  },
+  "tools/blender/out/Stations/charger.fbx": {
+    "type": "Model",
+    "sha256": "8a756922b125d8014af40d6853c65e17ce7d9b466d730f89466aa6551cd3878f",
+    "assetId": "92493072881004",
+    "sheet": "f5ee6d88fdcf6524ce9b5e8ff008ddf09554fff208794bb6846b37bb0def40f7"
+  },
+  "tools/blender/out/Stations/factory.fbx": {
+    "type": "Model",
+    "sha256": "c73a5390f49f91104830c446513c1d4742dc2bcee4afddaca35f30a3d94a1250",
+    "assetId": "93086373718364",
+    "sheet": "401960cbd07d51b390be431a7917cc7729a6b125dd958c1c37158a6c8ca61bcb"
+  },
+  "tools/blender/out/Tiles/Soil.fbx": {
+    "type": "Model",
+    "sha256": "484b4393094a7527c1c71799ecbc158ffd8e09e27385cc3c3b28db45e28ca2f8",
+    "assetId": "119106552207150",
+    "sheet": "04e9ad537baf350d09ca370b93e018326cef9081541a2c85575137fc3810ac60"
+  }
+}

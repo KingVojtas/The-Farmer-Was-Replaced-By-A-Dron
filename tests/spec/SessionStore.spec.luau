@@ -194,5 +194,50 @@ return function(T, Loader)
 			expect(store:Peek("u_1").data.currencies.wheat).toBe(11)
 			expect(store:Peek("u_1").lock).toBeNil()
 		end)
+
+		-- BUG-07: the lock belongs to a LOAD, not to the server.
+		it("makes a same-server rejoin wait for the old profile's slow release", function()
+			local store, clock = MockDataStore.new({ latency = 0.05, wait = task.wait }), makeClock()
+			local session = makeSession(store, clock, "A", { loadRetries = 6 })
+			local old = session:LoadAsync("u_1")
+			old.data.currencies.wheat = 5 -- only in memory: the release must carry it
+			store:FailNext(1) -- the release's first write fails: it retries a moment later
+			local released
+			task.spawn(function()
+				released = old:ReleaseAsync()
+			end)
+			task.wait(0.02) -- the player is back on this server while the release is retrying
+			local new, err = session:LoadAsync("u_1")
+			expect(err).toBeNil()
+			expect(released).toBe(true)
+			expect(new.data.currencies.wheat).toBe(5) -- post-release data, never the stale copy
+			new.data.currencies.wheat = 6
+			expect(new:SaveAsync()).toBe(true) -- the old release didn't steal the new lock
+			expect(new:IsLost()).toBe(false)
+			expect(store:Peek("u_1").data.currencies.wheat).toBe(6)
+		end)
+
+		it("takes over this server's own orphaned lock at once (a release that never wrote)", function()
+			local store, clock = MockDataStore.new(), makeClock()
+			local session = makeSession(store, clock, "A")
+			local old = session:LoadAsync("u_1")
+			store:FailNext(3) -- every release write fails: the lock stays in the record
+			expect(old:ReleaseAsync()).toBe(false)
+			expect(store:Peek("u_1").lock.sessionId).toBe("A")
+			local new, err = session:LoadAsync("u_1")
+			expect(err).toBeNil()
+			expect(new:SaveAsync()).toBe(true)
+		end)
+
+		it("still refuses a lock held by this server's other, active load", function()
+			local store, clock = MockDataStore.new(), makeClock()
+			local session = makeSession(store, clock, "A")
+			local first = session:LoadAsync("u_1")
+			expect(first).toBeTruthy()
+			local second, err = session:LoadAsync("u_1")
+			expect(second).toBeNil()
+			expect(err).toBe("Locked")
+			expect(first:SaveAsync()).toBe(true) -- and the first keeps its lock
+		end)
 	end)
 end

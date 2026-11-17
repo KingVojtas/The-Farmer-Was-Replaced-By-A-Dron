@@ -41,7 +41,7 @@
 	        blades flat, origin at the hub). Optional: Eye (Neon, PaintSlot "accent"), any part
 	        with the attribute PaintSlot = primary | secondary | accent, and BatteryBar or
 	        StatusLight (Neon, no SurfaceAppearance: the game colours it by battery).
-	    [ ] <= 16 MeshParts, <= 1,900 tris. Keep the top of Body clear in a 1.2-stud circle (hats
+	    [ ] <= 14 MeshParts, <= 1,900 tris (ART_BIBLE §7). Keep the top of Body clear in a 1.2-stud circle (hats
 	        sit 0.4 above the body centre).
 	    [ ] It hovers 5 studs up with a 0.35 bob and a 14-degree lean: nothing may clip.
 	  Stations ReplicatedStorage.Assets.Stations.charger / .factory (pivot = top of the station
@@ -172,6 +172,11 @@ end
 
 function AssetLibrary.station(kind: string): Model?
 	return cloneModel({ "Stations", kind })
+end
+
+-- A plot dressing piece (Assets.Dressing.FencePost / FenceRail / Walkway / SignPost), or nil.
+function AssetLibrary.dressing(name: string): Model?
+	return cloneModel({ "Dressing", name })
 end
 
 -- True when an artist station model exists (no clone is made).

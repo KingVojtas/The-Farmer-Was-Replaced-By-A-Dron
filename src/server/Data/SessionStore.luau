@@ -14,7 +14,8 @@
 	RECORD FORMAT (one DataStore key per player)
 	  {
 	    data = <PlayerData>,
-	    lock = { sessionId = "<guid>", jobId = "<game.JobId>", time = <os.time()> } | nil,
+	    lock = { sessionId = "<guid>", loadId = "<guid>#<n>", jobId = "<game.JobId>",
+	             time = <os.time()> } | nil,
 	    meta = { createdAt, updatedAt, saves, loads },
 	  }
 
@@ -27,6 +28,12 @@
 	  * Save: refuses to write unless the lock is still ours. If it isn't, the profile is
 	    marked LOST and `onLost` fires (DataService kicks the player to stop any dupes).
 	  * Release: final write that clears the lock.
+	  * The lock belongs to ONE LOAD (loadId), not to the server: a save or release only writes
+	    while the record still carries its own loadId. A same-server rejoin whose earlier
+	    profile is still releasing waits like any other locked load ("Locked", retried), so it
+	    can never load pre-release data and then lose the lock to that release (BUG-07). A lock
+	    of this server whose load is no longer active (a release whose write failed) is taken
+	    over at once.
 	  * A record that isn't a table is reported as "Corrupt" and is NEVER overwritten.
 
 	Dependencies (store, clock, wait, ids, logging) are injected so this module runs under the
@@ -98,7 +105,11 @@ function SessionStore.new(options: Options): SessionStore
 		One UpdateAsync write with retries. Returns true only if the record was committed with
 		our lock still in place.
 	]]
-	local function write(profile: Profile, state: State, release: boolean): boolean
+	-- loadIds of this server's profiles that may still write (loaded, not yet released).
+	local activeLoads: { [string]: boolean } = {}
+	local loadCounter = 0
+
+	local function write(profile: Profile, state: State, release: boolean, loadId: string): boolean
 		for attempt = 1, options.writeRetries do
 			local outcome: string? = nil
 			local ok, err = pcall(function()
@@ -109,15 +120,20 @@ function SessionStore.new(options: Options): SessionStore
 						return nil
 					end
 					local lock = old.lock
-					if type(lock) ~= "table" or lock.sessionId ~= options.sessionId then
-						outcome = "lost" -- another server took the record over
+					if type(lock) ~= "table" or lock.loadId ~= loadId then
+						outcome = "lost" -- another load (any server) took the record over
 						return nil
 					end
 					local now = options.now()
 					old.data = profile.data
 					old.lock = if release
 						then nil
-						else { sessionId = options.sessionId, jobId = options.jobId, time = now }
+						else {
+							sessionId = options.sessionId,
+							loadId = loadId,
+							jobId = options.jobId,
+							time = now,
+						}
 					local meta = if type(old.meta) == "table" then old.meta else {}
 					meta.updatedAt = now
 					meta.saves = (if type(meta.saves) == "number" then meta.saves else 0) + 1
@@ -132,6 +148,7 @@ function SessionStore.new(options: Options): SessionStore
 			elseif ok and outcome == "lost" then
 				if not state.lost then
 					state.lost = true
+					activeLoads[loadId] = nil
 					log(
 						"warn",
 						string.format(
@@ -167,7 +184,7 @@ function SessionStore.new(options: Options): SessionStore
 		return false
 	end
 
-	local function newProfile(key: string, data: any, userIds: { number }): Profile
+	local function newProfile(key: string, data: any, userIds: { number }, loadId: string): Profile
 		local state: State = {
 			saving = false,
 			releasing = false,
@@ -219,7 +236,7 @@ function SessionStore.new(options: Options): SessionStore
 				-- No yield between the check above and taking the mutex (cooperative scheduler).
 				state.saving = true
 				local startedGen = state.requestGen
-				local callOk, written = pcall(write, profile, state, false)
+				local callOk, written = pcall(write, profile, state, false, loadId)
 				state.saving = false
 				if callOk and written then
 					state.savedGen = math.max(state.savedGen, startedGen)
@@ -252,7 +269,7 @@ function SessionStore.new(options: Options): SessionStore
 					state.saving = true
 					state.requestGen += 1
 					local startedGen = state.requestGen
-					local callOk, written = pcall(write, profile, state, true)
+					local callOk, written = pcall(write, profile, state, true, loadId)
 					state.saving = false
 					ok = callOk and written == true
 					if ok then
@@ -265,6 +282,7 @@ function SessionStore.new(options: Options): SessionStore
 				state.releaseOk = ok
 				state.released = true
 				state.releasing = false
+				activeLoads[loadId] = nil -- this load will never write again
 				return ok
 			end,
 		}
@@ -273,6 +291,8 @@ function SessionStore.new(options: Options): SessionStore
 
 	local function loadAsync(_self: SessionStore, key: string, userIds: { number }?): (Profile?, LoadError?)
 		local lastProblem: LoadError = "Failed"
+		loadCounter += 1
+		local loadId = options.sessionId .. "#" .. tostring(loadCounter)
 
 		for attempt = 1, options.loadRetries do
 			local outcome: string? = nil
@@ -295,17 +315,24 @@ function SessionStore.new(options: Options): SessionStore
 
 					local record = old or {}
 					local lock = record.lock
-					if type(lock) == "table" and lock.sessionId ~= options.sessionId then
-						local lockTime = if type(lock.time) == "number" then lock.time else 0
-						-- math.abs: a lock time far in the future (clock skew / garbage) also expires.
-						if math.abs(now - lockTime) < options.lockStaleSeconds then
-							outcome = "locked"
-							return nil
+					if type(lock) == "table" and lock.loadId ~= loadId then
+						-- One of OUR loads that can no longer write (its release already ended)
+						-- is an orphan: take it at once. Any other lock, including one of this
+						-- server's profiles that is still releasing, is respected until stale.
+						local orphan = lock.sessionId == options.sessionId and not activeLoads[lock.loadId]
+						if not orphan then
+							local lockTime = if type(lock.time) == "number" then lock.time else 0
+							-- math.abs: a lock time far in the future (clock skew / garbage) also expires.
+							if math.abs(now - lockTime) < options.lockStaleSeconds then
+								outcome = "locked"
+								return nil
+							end
+							takenFrom = tostring(lock.jobId)
 						end
-						takenFrom = tostring(lock.jobId)
 					end
 
-					record.lock = { sessionId = options.sessionId, jobId = options.jobId, time = now }
+					record.lock =
+						{ sessionId = options.sessionId, loadId = loadId, jobId = options.jobId, time = now }
 					record.data = options.sanitize(record.data, now)
 					local meta = if type(record.meta) == "table"
 						then record.meta
@@ -331,7 +358,8 @@ function SessionStore.new(options: Options): SessionStore
 						)
 					)
 				end
-				return newProfile(key, loaded.data, userIds or {}), nil
+				activeLoads[loadId] = true
+				return newProfile(key, loaded.data, userIds or {}, loadId), nil
 			elseif ok and outcome == "corrupt" then
 				log(
 					"error",

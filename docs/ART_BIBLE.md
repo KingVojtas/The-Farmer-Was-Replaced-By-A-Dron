@@ -367,7 +367,7 @@ Blender rules below still apply to any modular kit.
   lighting, viewed from 30 studs. No visible line, no lighting step on the normals, no
   brightness jump at the borders.
 
-### 2.4 The four soil states
+### 2.4 The soil states
 
 Common to all states: metalness **0**; albedo values from §1.4; 512² maps (`Color`, `Normal`,
 `Roughness`, plus `Emissive mask` for Fertile); tileable.
@@ -422,10 +422,23 @@ Common to all states: metalness **0**; albedo values from §1.4; 512² maps (`Co
 * **Bloom check:** at the §1.5 settings the field should look sprinkled, not foggy. If a halo
   forms, reduce coverage before reducing strength.
 
+#### 2.4.5 Dug (resting after `dig()`)
+
+* **Read:** "dug up, leave it alone for a moment": freshly turned, darker earth in loose clods.
+  It's the only state that says "you can't plant here right now", so it must read as
+  different from Dry at a glance (darker, coarser), without looking wet.
+* **Base:** albedo `#6B4A30` (Soil Dry dark) with `#4E3524` (Soil crack) in the gaps between
+  clods; roughness **0.95** (matte, never glossy: glossy reads as Wet); `StudsPerTile` **4**,
+  `MaterialPattern` Organic (a finer, churned grain than Dry).
+* **Normal:** chunky clods 0.6–1.2 studs across, stronger than Dry (about 1.5×) and with no
+  furrow direction.
+* **Lifetime:** about 25 s (`GameConfig.Dig.ExhaustSeconds`), then the tile goes back to Dry.
+
 **Gameplay mapping** (`SoilStates.forTile`):
 * Dry (`SoilDry`) = bare soil and wild grass tiles (weeds on unbroken dirt)
 * Tilled (`SoilTilled`) = a player-planted crop, planted, growing or ready
 * Watered (`SoilWet`) = the tile's `Watered` attribute; it overrides Tilled
+* Dug (`SoilDug`) = the tile's `Exhausted` attribute (dig exhaustion); it overrides all others
 * Fertilized (`SoilFertile`) = **reserved** for a future mechanic
 
 The state swap itself is the hook in §2.2.

@@ -19,10 +19,11 @@
 	PUBLISHED ATTRIBUTES
 	  Plot model : OwnerUserId, Index, Size, Pitch, Origin (Vector3, top-center of tile 0,0),
 	               DroneX / DroneY (numbers), Drone (Vector3 x, y, 0), DroneSerial,
-	               DroneMoveTime, plus Remote DroneMoved (index, x, y, duration).
+	               DroneMoveTime, plus Remote DroneMoved (index, x, y, duration, serial).
 	               Battery, BatteryMax, Water, WaterMax, Cargo, CargoMax, DronePaint, DroneHat
 	  Tile part  : X, Y, State ("empty"|"planted"|"growing"|"ready"), Crop, Watered,
-	               Progress (0..1, 10 % steps)
+	               Progress (0..1, 10 % steps), Exhausted (dug up recently: nothing grows and
+	               dig() / plant() are refused until it turns false again)
 	  Station    : Kind ("charger"|"factory"), X, Y
 
 	ZONE
@@ -34,8 +35,8 @@
 
 	GROWTH (Progression.Growth, shared with simulate())
 	  Bare soil regrows wild grass after Grass.RegrowDelay seconds; crops grow by weather,
-	  water and boosts. Tile states live for the session only; currencies, cargo and research
-	  are saved.
+	  water and boosts. The tiles are saved too (PlayerData.field, Progression.FieldSave): a
+	  snapshot before every save (Progression.FieldKeeper), restored when the plot is built.
 ]]
 
 local Debris = game:GetService("Debris")
@@ -53,6 +54,7 @@ local Progression = script.Parent.Parent.Progression
 local Economy = require(Progression.Economy)
 local Field = require(Progression.Field)
 local Growth = require(Progression.Growth)
+local FieldKeeper = require(Progression.FieldKeeper)
 local FieldSave = require(Progression.FieldSave)
 local DataService = require(script.Parent.DataService)
 local WeatherService = require(script.Parent.WeatherService)
@@ -103,6 +105,14 @@ local GridService = {}
 local plotsByPlayer: { [Player]: Plot } = {}
 local plotsByIndex: { [number]: Plot } = {}
 local plotsFolder: Folder
+-- DroneSerial for EVERY plot comes from this one server-wide counter: it only grows, so a
+-- new plot that reuses an old Index never publishes a serial a client has already seen for
+-- that Index (clients only apply newer serials: Shared.Util.DroneSignals.shouldApply).
+local droneSerial = 0
+-- Live field -> saved data, fresh whichever PlayerRemoving handler runs first (BUG-02).
+local fieldKeeper = FieldKeeper.new(function(player: any): any
+	return DataService:GetData(player)
+end, os.time)
 
 local function rgb(c: { number }): Color3
 	return Color3.fromRGB(c[1], c[2], c[3])
@@ -113,11 +123,18 @@ local function cellTop(origin: Vector3, x: number, y: number): Vector3
 	return origin + Vector3.new(x * PITCH, 0, -y * PITCH)
 end
 
+-- The farm village layout (GameConfig.Grid.PlotSlots); past the last slot, the old rows far
+-- north of the map so an oversized server never builds a plot inside the village or a farm.
 local function plotCenter(index: number): Vector3
-	local col = (index - 1) % GRID.PlotsPerRow
-	local row = math.floor((index - 1) / GRID.PlotsPerRow)
+	local slot = GRID.PlotSlots[index]
+	if slot ~= nil then
+		return Vector3.new(slot[1], 0, slot[2])
+	end
+	local overflow = index - #GRID.PlotSlots
+	local col = (overflow - 1) % GRID.PlotsPerRow
+	local row = math.floor((overflow - 1) / GRID.PlotsPerRow)
 	local x = (col - (GRID.PlotsPerRow - 1) / 2) * GRID.PlotSpacing
-	local z = GRID.PlotRowOffset + row * GRID.PlotSpacing
+	local z = -(GRID.OverflowOffset + row * GRID.PlotSpacing)
 	return Vector3.new(x, 0, z)
 end
 
@@ -165,6 +182,7 @@ local function publishTile(tile: Tile)
 	part:SetAttribute("State", tile.state)
 	part:SetAttribute("Crop", tile.crop or "")
 	part:SetAttribute("Watered", tile.watered)
+	part:SetAttribute("Exhausted", Growth.isExhausted(tile))
 	local shown = math.floor(tile.progress * 10) / 10
 	tile.shownProgress = shown
 	part:SetAttribute("Progress", shown)
@@ -250,15 +268,48 @@ local function refreshSign(plot: Plot)
 	end
 end
 
+--[[
+	The low-poly soil tile (tools/blender/tiles.py -> ReplicatedStorage.Assets.Tiles.Soil): a
+	bevelled slab authored at exactly TileSize x TileHeight x TileSize, cloned in place of the
+	plain Part. Same name, size, CollisionGroup and attributes, so nothing else changes; the
+	client's SoilLook still sets Material / MaterialVariant / Color on it. Missing, or nothing
+	visible in it: the Part, as before.
+]]
+local function soilTemplate(): BasePart?
+	local assets = ReplicatedStorage:FindFirstChild("Assets")
+	local tiles = assets and assets:FindFirstChild("Tiles")
+	local soil = tiles and tiles:FindFirstChild("Soil")
+	local part = soil and soil:FindFirstChildWhichIsA("BasePart", true)
+	if part ~= nil and part.Size.Magnitude > 0.2 and part.Transparency < 0.9 then
+		return part
+	end
+	return nil
+end
+local SOIL_TEMPLATE = soilTemplate()
+
 local function newTilePart(plot: Plot, x: number, y: number): Tile
 	local top = cellTop(plot.origin, x, y)
-	local part = makePart(
-		string.format("Tile_%d_%d", x, y),
-		Vector3.new(GRID.TileSize, GRID.TileHeight, GRID.TileSize),
-		top - Vector3.new(0, GRID.TileHeight / 2, 0),
-		rgb(CropConfig.SoilColor),
-		Enum.Material.Ground
-	)
+	local name = string.format("Tile_%d_%d", x, y)
+	local size = Vector3.new(GRID.TileSize, GRID.TileHeight, GRID.TileSize)
+	local center = top - Vector3.new(0, GRID.TileHeight / 2, 0)
+	local part: BasePart
+	if SOIL_TEMPLATE ~= nil then
+		part = SOIL_TEMPLATE:Clone()
+		part.Name = name
+		part.Size = size
+		part.CFrame = CFrame.new(center)
+		part.Color = rgb(CropConfig.SoilColor)
+		part.Material = Enum.Material.Ground
+		part.Anchored = true
+		part.CanCollide = true
+		part.CanQuery = true
+		part.CanTouch = true
+		for key in part:GetAttributes() do
+			part:SetAttribute(key, nil)
+		end
+	else
+		part = makePart(name, size, center, rgb(CropConfig.SoilColor), Enum.Material.Ground)
+	end
 	part.CollisionGroup = COLLISION.Tiles -- characters walk on the Base, never on a farm's tiles
 	part:SetAttribute("X", x)
 	part:SetAttribute("Y", y)
@@ -420,7 +471,7 @@ local function buildPlot(index: number, player: Player, size: number): Plot
 	model:SetAttribute("Pitch", PITCH)
 	model:SetAttribute("Origin", origin)
 	model:SetAttribute("DroneMoveTime", GameConfig.Drone.ActionTimes.move)
-	model:SetAttribute("DroneSerial", 0)
+	model:SetAttribute("DroneSerial", droneSerial) -- past every serial an older plot published
 	GridService:PublishDrone(plot)
 	model.Parent = plotsFolder
 	return plot
@@ -488,6 +539,9 @@ local function createPlot(player: Player)
 	local plot = buildPlot(index, player, GridService:GetStats(player).gridSize)
 	plotsByIndex[index] = plot
 	plotsByPlayer[player] = plot
+	fieldKeeper:attach(player, function(): { Growth.TileData }
+		return plot.tiles :: any -- read at save time: Grid Expansion swaps the table
+	end)
 	GridService:PublishCosmetics(player)
 	WeatherService:AttachPlot(player, plot.model)
 	-- The saved field comes back (no tick replay; long absences snap crops to grown).
@@ -501,6 +555,13 @@ local function createPlot(player: Player)
 		end
 		for _, ripe in Growth.settleSquares(plot.size, tileAt) do
 			publishTile(ripe :: any)
+		end
+		-- The drone starts parked on the charger: a hold saved last session is banked now, as if
+		-- it had just landed there (BUG-10; non-yielding, saved with the next save).
+		local _, banked = Economy.unloadCargo(data)
+		if banked > 0 then
+			DataService:Replicate(player)
+			GridService:PublishDrone(plot)
 		end
 	end
 	player:GetAttributeChangedSignal("Pass_VIP"):Connect(function()
@@ -518,6 +579,9 @@ local function removePlot(player: Player)
 	if plot == nil then
 		return
 	end
+	-- Final field snapshot BEFORE anything is torn down (a no-op if DataService already
+	-- released the profile: its before-save hook snapshotted the live plot then).
+	fieldKeeper:detach(player)
 	plot.destroyed = true -- running programs see this and stop
 	WeatherService:DetachPlot(player)
 	plotsByPlayer[player] = nil
@@ -532,7 +596,7 @@ local function growthTick(dt: number)
 		local env: Growth.Env = { weather = weather, growthBoost = growthBoost }
 		for _, tile in plot.tiles do
 			local change = Growth.advance(tile, dt, env)
-			if change.state or change.watered then
+			if change.state or change.watered or change.exhausted then
 				publishTile(tile)
 			elseif change.progress then
 				publishProgress(tile)
@@ -561,10 +625,7 @@ function GridService:Init()
 
 	-- Every save carries the current field.
 	DataService:OnBeforeSave(function(player: Player, data: any)
-		local plot = plotsByPlayer[player]
-		if plot ~= nil and not plot.destroyed then
-			data.field = FieldSave.snapshot(plot.tiles :: any, os.time())
-		end
+		fieldKeeper:beforeSave(player, data)
 	end)
 
 	-- Connected in Init so no ProfileLoaded can be missed.
@@ -679,15 +740,16 @@ function GridService:MoveDrone(plot: Plot, dx: number, dy: number, duration: num
 	plot.drone.y += dy
 	plot.model:SetAttribute("DroneMoveTime", duration) -- set BEFORE Drone so the client tween uses it
 	GridService:PublishDrone(plot)
-	local serial = (plot.model:GetAttribute("DroneSerial") :: number?) or 0
-	plot.model:SetAttribute("DroneSerial", serial + 1)
+	droneSerial += 1
+	plot.model:SetAttribute("DroneSerial", droneSerial)
 	-- Remotes replicate even when Vector attributes stay silent. Fire after attributes so a
-	-- client that re-reads the plot on this event sees the new cell.
-	NetService:FireAll("DroneMoved", plot.index, plot.drone.x, plot.drone.y, duration)
+	-- client that re-reads the plot on this event sees the new cell. The serial orders the
+	-- remote against the attributes on the client (whichever arrives first wins once).
+	NetService:FireAll("DroneMoved", plot.index, plot.drone.x, plot.drone.y, duration, droneSerial)
 end
 
 function GridService:PlantTile(tile: Tile, cropId: string)
-	Growth.plant(tile, cropId, WeatherService:GetCurrent())
+	Growth.plant(tile, cropId)
 	publishTile(tile)
 end
 
@@ -698,6 +760,12 @@ end
 
 function GridService:ClearTile(tile: Tile)
 	Growth.clear(tile)
+	publishTile(tile)
+end
+
+-- dig(): the soil rests for `seconds` (Growth.exhaust), published as Exhausted = true (BUG-11).
+function GridService:ExhaustTile(tile: Tile, seconds: number)
+	Growth.exhaust(tile, seconds)
 	publishTile(tile)
 end
 

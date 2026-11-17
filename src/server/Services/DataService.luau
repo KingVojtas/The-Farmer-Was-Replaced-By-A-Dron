@@ -23,7 +23,7 @@
 
 	REPLICATION
 	  Values the client UI needs are mirrored as player attributes and in leaderstats
-	  (Harvested, Wheat). Call DataService:Replicate(player) after changing data.
+	  (Harvested, Biomass). Call DataService:Replicate(player) after changing data.
 	    Cur_<currencyId>    number   every currency (Cur_hay, Cur_biomass, Cur_batteries, ...)
 	    Tech_<nodeId>       boolean  researched Tech Tree nodes
 	    Owned_<cosmeticId>  boolean  premium cosmetics bought in the Shop
@@ -70,6 +70,7 @@ local sessionStore: SessionStore.SessionStore
 local profiles: { [Player]: Profile } = {}
 local lastAutosave: { [Profile]: number } = {}
 local releasingCount: { [number]: number? } = {} -- userId -> releases in progress
+local loadingCount = 0 -- LoadAsync calls in flight (BindToClose waits for them too)
 -- Called (synchronously) right before every save of a player's data: autosave, leaving and
 -- shutdown. GridService writes the field snapshot here, so a save is never stale.
 local beforeSave: { (player: Player, data: any) -> () } = {}
@@ -167,17 +168,22 @@ local function setupReplication(player: Player)
 end
 
 local function onPlayerAdded(player: Player)
-	-- Same-server rejoin: don't race our own release of this user's previous session.
+	-- Same-server rejoin: don't race our own release of this user's previous session. (Only a
+	-- shortcut: the per-load lock in SessionStore makes the load wait for it anyway, BUG-07.)
 	local waitStart = os.clock()
 	while releasingCount[player.UserId] ~= nil and os.clock() - waitStart < GameConfig.Data.ShutdownTimeout do
 		task.wait(0.2)
 	end
-	if player.Parent ~= Players then
+	if player.Parent ~= Players or shuttingDown then
 		return
 	end
 
 	local key = GameConfig.Data.KeyPrefix .. tostring(player.UserId)
+	-- Counted until the profile is either kept or handed to releaseProfile (which counts it
+	-- from then on, without a yield in between), so BindToClose waits for loads too (BUG-08).
+	loadingCount += 1
 	local profile, err = sessionStore:LoadAsync(key, { player.UserId })
+	loadingCount -= 1
 
 	if profile == nil then
 		warn(
@@ -251,11 +257,16 @@ local function onClose()
 		task.spawn(releaseProfile, entry.userId, entry.profile)
 	end
 
+	-- Loads still in flight finish, see `shuttingDown` and release at once: wait for those too,
+	-- or their fresh lock would block the player elsewhere for LockStaleSeconds (BUG-08).
+	local function busy(): boolean
+		return next(releasingCount) ~= nil or loadingCount > 0
+	end
 	local start = os.clock()
-	while next(releasingCount) ~= nil and os.clock() - start < GameConfig.Data.ShutdownTimeout do
+	while busy() and os.clock() - start < GameConfig.Data.ShutdownTimeout do
 		task.wait(0.1)
 	end
-	if next(releasingCount) ~= nil then
+	if busy() then
 		warn("[DataService] Shutdown timeout: some profiles may not have been saved")
 	end
 end

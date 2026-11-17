@@ -89,5 +89,50 @@ return function(T, Loader)
 			expect(DroneSignals.action(water, false, true, false)).toBe("water")
 			expect(DroneSignals.action(water, false, true, true)).toBe(nil) -- rain's auto-water
 		end)
+
+		-- BUG-05 / BUG-06: the remote and the attributes deliver the same move in either order.
+		it("applies a drone cell only for a newer DroneSerial", function()
+			expect(DroneSignals.shouldApply(nil, 5, false)).toBe(true) -- nothing shown yet
+			expect(DroneSignals.shouldApply(5, 6, true)).toBe(true) -- the next move
+			expect(DroneSignals.shouldApply(6, 6, false)).toBe(false) -- the duplicate (remote + attrs)
+			expect(DroneSignals.shouldApply(6, 5, true)).toBe(false) -- a lagging attribute: no tween back
+			expect(DroneSignals.shouldApply(6, 6, true)).toBe(false) -- half-replicated X/Y: wait for the serial
+		end)
+
+		it("replays remote-first and attributes-first without a step back", function()
+			-- The drone shows serial 10 at cell A; move 11 goes to cell B.
+			for _, order in { { "remote", "attrs" }, { "attrs", "remote" } } do
+				local applied, cell, tweens = 10, "A", 0
+				local function deliver(serial, target)
+					if DroneSignals.shouldApply(applied, serial, target ~= cell) then
+						applied = serial
+						if target ~= cell then
+							cell = target
+							tweens += 1
+						end
+					end
+				end
+				for _, source in order do
+					deliver(11, "B") -- both sources carry move 11
+					if source == "remote" then
+						deliver(10, "A") -- the per-frame poll still reads the OLD attributes
+					end
+				end
+				expect(cell).toBe("B")
+				expect(tweens).toBe(1)
+			end
+		end)
+
+		it("ignores a cached move from an older plot that reused the Index", function()
+			-- Serials are server-wide: the new plot starts at the counter's current value.
+			local oldPlotLastMove = 41
+			local newPlotStart = 41
+			expect(DroneSignals.shouldApply(newPlotStart, oldPlotLastMove, true)).toBe(false)
+		end)
+
+		it("falls back to 'cell differs' without serials (old server)", function()
+			expect(DroneSignals.shouldApply(3, nil, true)).toBe(true)
+			expect(DroneSignals.shouldApply(3, nil, false)).toBe(false)
+		end)
 	end)
 end

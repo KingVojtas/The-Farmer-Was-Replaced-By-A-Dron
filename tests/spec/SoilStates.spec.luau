@@ -29,6 +29,18 @@ return function(T, Loader)
 			expect(SoilStates.forTile("planted", CropConfig.WildCrop, true)).toBe("SoilWet")
 		end)
 
+		-- ASSETS-2: dig exhaustion (the server's Exhausted tile attribute, BUG-11) reads as dug soil.
+		it("shows dug-up, resting soil as SoilDug", function()
+			expect(SoilStates.forTile("empty", "", false, true)).toBe("SoilDug")
+			expect(SoilStates.forTile("empty", "", false, false)).toBe("SoilDry")
+			expect(SoilStates.forTile("empty", "", false)).toBe("SoilDry") -- old callers: no argument
+			local listed = false
+			for _, name in SoilStates.Names do
+				listed = listed or name == "SoilDug"
+			end
+			expect(listed).toBe(true) -- so SoilLook resolves a look (and an artist variant) for it
+		end)
+
 		it("treats unknown crops as bare soil and never returns the reserved SoilFertile", function()
 			expect(SoilStates.forTile("growing", "nope", false)).toBe("SoilDry")
 			for _, name in SoilStates.Names do

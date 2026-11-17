@@ -25,7 +25,7 @@
 	  time is divided by (tech speed x Overclock x throttle). With an empty battery the drone
 	  can still MOVE, but LimpSlowdown times slower, so it can always crawl home - no soft-lock.
 	  charge() at the Charging Station (0, -1) refills battery and water tank. Arriving at the
-	  charger also unloads the cargo hold into the silo (raw currencies).
+	  charger, and charge() itself, also unload the cargo hold into the silo (raw currencies).
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -355,8 +355,8 @@ function DroneAPI.create(options: Options): ({ [string]: BuiltinImpl }, RunInfo)
 		if not spendEnergy("dig") then
 			return fail(NO_ENERGY)
 		end
-		-- Every dig exhausts the tile, found or not (Growth.exhaust).
-		Growth.exhaust(tile, GameConfig.Dig.ExhaustSeconds)
+		-- Every dig exhausts the tile, found or not (Growth.exhaust; the live farm publishes it).
+		world:exhaust(tile, GameConfig.Dig.ExhaustSeconds)
 		local found = world:random() < GameConfig.Dig.Chance
 		if found then
 			local added = Economy.addToCargo(data, GameConfig.Dig.currency, GameConfig.Dig.yield, capacity)
@@ -385,6 +385,9 @@ function DroneAPI.create(options: Options): ({ [string]: BuiltinImpl }, RunInfo)
 				)
 			)
 		end
+		-- The hold is banked here too, not only when a move ARRIVES: a drone that is already on
+		-- the charger (a rejoin with a saved hold) would otherwise keep it full (BUG-10).
+		unloadAtCharger()
 		local s = stats()
 		drone.water = s.waterCapacity
 		local total = math.max(DRONE.ActionTimes.charge, (s.batteryCapacity - drone.battery) / s.chargeRate)
@@ -467,6 +470,7 @@ function DroneAPI.create(options: Options): ({ [string]: BuiltinImpl }, RunInfo)
 		end
 		local gained, used = Economy.refine(data, GameConfig.Factory.MaxRefineBatches)
 		world:replicate()
+		world:publish() -- the battery changed (BUG-09)
 		output.info(string.format("Bioreactor turned %d Biomass into %d Biofuel.", used, gained))
 		world:wait(duration("refine"))
 		return true
@@ -559,7 +563,16 @@ function DroneAPI.create(options: Options): ({ [string]: BuiltinImpl }, RunInfo)
 					Values.formatNumber(seconds)
 				)
 		end
+		-- A simulation runs on its own virtual clock, so on the REAL world it would take no time
+		-- at all: `while True: simulate(...)` could compile and run hundreds of farms a second.
+		-- Every call (failed ones too) therefore takes at least MinRealSeconds here.
+		local started = world:now()
 		local harvested, err = simulator(args[1] :: string, seconds)
+		local spent = world:now() - started
+		local minimum = GameConfig.Simulate.MinRealSeconds
+		if spent < minimum and not options.shouldStop() then
+			world:wait(minimum - spent)
+		end
 		if harvested == nil then
 			return nil, err or "The simulation failed."
 		end
